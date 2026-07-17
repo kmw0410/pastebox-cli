@@ -1,0 +1,93 @@
+# Pastebox CLI
+Pastebox 텍스트 업로드/원문 조회용 터미널 클라이언트
+
+[English](./README.md) | Korean
+
+패키지 문서: [설치 및 사용법](./package_ko.md)
+
+### 기술 스택
+| 레이어 | 스택 |
+|--------|------|
+| 언어 | Go 1.26.4 |
+| 전송 | Go 표준 라이브러리 HTTP 클라이언트 |
+| 패키징 | nFPM |
+| 릴리스 | GitHub Actions + GitHub Releases |
+
+### 디렉터리 구조
+```text
+pastebox-cli/
+├── .github/
+│   └── workflows/
+│       ├── cli-package-build.yml
+│       ├── release-build.yml
+│       └── release.yml
+├── LICENSE
+├── README.md
+├── README_ko.md
+├── config.json
+├── package.md
+├── package_ko.md
+├── go.mod
+├── main.go
+├── config.go
+├── config_test.go
+├── upload.go
+├── upload_test.go
+├── get.go
+├── get_test.go
+├── output.go
+└── packaging/
+    └── nfpm.yaml
+```
+
+### 어떻게 사용하나요?
+1. GitHub Release에서 맞는 패키지를 내려받거나 `go build`로 직접 빌드합니다.
+2. 저장소에 포함된 `config.json` 예시를 `~/.config/pastebox/config.json`으로 복사하거나, `pb`를 한 번 실행해 자동 생성합니다.
+3. `server_url`을 설정한 뒤 `pb`로 업로드하고 `pb get`으로 원문을 조회합니다.
+
+### 명령어
+```text
+pb [options] [file|-]
+pb get [--password PASSWORD] <code|url>
+pb config validate
+pb version
+```
+
+### 기능
+1. **스트리밍 업로드**: 파일명 보존 업로드와 stdin 파이프 입력을 모두 지원하며, 전체 입력을 메모리에 올리지 않습니다.
+
+   ```bash
+   pb server.log
+   journalctl -u nginx | pb
+   ```
+
+2. **보관 정책 제어**: 영구, 일회성, 사용자 지정 만료 업로드를 지원합니다.
+
+   ```bash
+   pb --permanent config.yaml
+   pb --once incident.txt
+   pb --expires 12h build.log
+   ```
+
+3. **비밀번호 보호 Paste 조회**: 원문 조회 시 `paste-password` 헤더로 비밀번호를 전달합니다.
+
+   ```bash
+   pb get --password 'PASTE_PASSWORD' AbC123
+   ```
+
+4. **스크립트 친화적 출력**: 공개 URL만 출력하거나 JSON 형식으로 받을 수 있습니다.
+
+   ```bash
+   pb --quiet server.log
+   pb --json server.log
+   ```
+
+### 릴리스 패키지
+GitHub Release에서 다음 Linux 패키지를 제공합니다.
+
+| 배포판 | amd64 | arm64 |
+|---|---|---|
+| Debian / Ubuntu | `amd64.deb` | `arm64.deb` |
+| Arch Linux 계열 | `x86_64.pkg.tar.zst` | `aarch64.pkg.tar.zst` |
+
+설치와 설정의 자세한 내용은 [package_ko.md](./package_ko.md)를 참고하세요.
