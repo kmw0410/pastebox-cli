@@ -1,7 +1,7 @@
 pkgname=pastebox-cli
 pkgver=26.07.18.2
 pkgrel=1
-pkgdesc="Terminal client for the Pastebox text sharing service"
+pkgdesc="Lightweight command-line client for self-hosted Pastebox servers"
 arch=('x86_64' 'aarch64')
 url="https://github.com/kmw0410/pastebox-cli"
 license=('MIT')
