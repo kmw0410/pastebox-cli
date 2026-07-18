@@ -125,3 +125,11 @@ jobs:
             --verify-tag \
             --title "$TAG" \
             --notes-file release-notes.md
+
+      - name: Upload release metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: pastebox-cli-release-metadata
+          path: ${{ runner.temp }}/pastebox-cli-packages/release-tag.txt
+          if-no-files-found: error
+          retention-days: 7

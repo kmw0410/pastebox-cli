@@ -1,0 +1,195 @@
+name: AUR Publish
+
+on:
+  workflow_run:
+    workflows:
+      - Release
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag to publish to the AUR
+        required: true
+        type: string
+
+concurrency:
+  group: aur-publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    permissions:
+      actions: read
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Download release metadata
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v5
+        with:
+          name: pastebox-cli-release-metadata
+          path: ${{ runner.temp }}/pastebox-cli-release-metadata
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Resolve release tag
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          git fetch --tags --force
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="${{ inputs.tag }}"
+          else
+            TAG="$(tr -d '\r\n' < "$RUNNER_TEMP/pastebox-cli-release-metadata/release-tag.txt")"
+          fi
+
+          if [[ ! "$TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
+            echo "Invalid release tag: $TAG" >&2
+            exit 1
+          fi
+
+          git rev-parse --verify "${TAG}^{commit}" >/dev/null
+          gh release view "$TAG" >/dev/null
+
+          PACKAGE_VERSION="${TAG#v}"
+          PACKAGE_VERSION="${PACKAGE_VERSION//-/.}"
+          SHORT_SHA="$(git rev-parse --short "${TAG}^{commit}")"
+
+          {
+            echo "tag=$TAG"
+            echo "package_version=$PACKAGE_VERSION"
+            echo "short_sha=$SHORT_SHA"
+          } >> "$GITHUB_OUTPUT"
+          echo "Using release: $TAG"
+
+      - name: Prepare AUR package files
+        id: package
+        env:
+          PACKAGE_VERSION: ${{ steps.release.outputs.package_version }}
+          SHORT_SHA: ${{ steps.release.outputs.short_sha }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          ARCHIVE="$RUNNER_TEMP/pastebox-cli-${TAG}.tar.gz"
+          ARCHIVE_URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+
+          curl --fail --location --retry 3 --output "$ARCHIVE" "$ARCHIVE_URL"
+          SOURCE_SHA256="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
+
+          sed -i \
+            -e "s/^pkgver=.*/pkgver=${PACKAGE_VERSION}/" \
+            -e "s/^pkgrel=.*/pkgrel=1/" \
+            -e "s/^_tag=.*/_tag=${TAG}/" \
+            -e "s/^_commit=.*/_commit=${SHORT_SHA}/" \
+            -e "s/^sha256sums=.*/sha256sums=('${SOURCE_SHA256}')/" \
+            packaging/aur/PKGBUILD
+
+          BUILD_DIR="$RUNNER_TEMP/aur-build"
+          mkdir -p "$BUILD_DIR"
+          cp packaging/aur/PKGBUILD "$BUILD_DIR/PKGBUILD"
+          cp "$ARCHIVE" "$BUILD_DIR/pastebox-cli-${PACKAGE_VERSION}.tar.gz"
+
+          echo "build_dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
+
+      - name: Build and test AUR package
+        env:
+          BUILD_DIR: ${{ steps.package.outputs.build_dir }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          docker run --rm \
+            --env EXPECTED_VERSION="$TAG" \
+            --volume "$BUILD_DIR:/build" \
+            archlinux:base-devel \
+            bash -ceu '
+              pacman -Syu --needed --noconfirm go
+              useradd --create-home builder
+              chown -R builder:builder /build
+
+              runuser -u builder -- bash -c "cd /build && makepkg --cleanbuild --noconfirm"
+              runuser -u builder -- bash -c "cd /build && makepkg --printsrcinfo > .SRCINFO"
+
+              VERSION_OUTPUT="$(runuser -u builder -- /build/pkg/pastebox-cli/usr/bin/pb version)"
+              case "$VERSION_OUTPUT" in
+                *"$EXPECTED_VERSION"*) ;;
+                *)
+                  echo "Unexpected version output: $VERSION_OUTPUT" >&2
+                  exit 1
+                  ;;
+              esac
+
+              file /build/pkg/pastebox-cli/usr/bin/pb | grep -F "statically linked"
+            '
+
+          cp "$BUILD_DIR/.SRCINFO" packaging/aur/.SRCINFO
+
+      - name: Configure AUR SSH access
+        env:
+          AUR_EMAIL: ${{ secrets.AUR_EMAIL }}
+          AUR_SSH_PRIVATE_KEY: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          AUR_USERNAME: ${{ secrets.AUR_USERNAME }}
+        shell: bash
+        run: |
+          if [ -z "$AUR_USERNAME" ] || [ -z "$AUR_EMAIL" ] || [ -z "$AUR_SSH_PRIVATE_KEY" ]; then
+            echo "AUR_USERNAME, AUR_EMAIL, and AUR_SSH_PRIVATE_KEY must be configured." >&2
+            exit 1
+          fi
+
+          install -d -m 700 "$HOME/.ssh"
+          printf '%s\n' "$AUR_SSH_PRIVATE_KEY" > "$HOME/.ssh/aur"
+          chmod 600 "$HOME/.ssh/aur"
+          ssh-keyscan -H aur.archlinux.org > "$HOME/.ssh/known_hosts"
+
+          cat > "$HOME/.ssh/config" <<'EOF'
+          Host aur.archlinux.org
+            User aur
+            IdentityFile ~/.ssh/aur
+            IdentitiesOnly yes
+            StrictHostKeyChecking yes
+          EOF
+          chmod 600 "$HOME/.ssh/config" "$HOME/.ssh/known_hosts"
+
+      - name: Publish to AUR
+        env:
+          AUR_EMAIL: ${{ secrets.AUR_EMAIL }}
+          AUR_USERNAME: ${{ secrets.AUR_USERNAME }}
+          PACKAGE_VERSION: ${{ steps.release.outputs.package_version }}
+        shell: bash
+        run: |
+          AUR_DIR="$RUNNER_TEMP/pastebox-cli-aur"
+          git -c init.defaultBranch=master clone \
+            ssh://aur@aur.archlinux.org/pastebox-cli.git \
+            "$AUR_DIR"
+
+          cp packaging/aur/PKGBUILD "$AUR_DIR/PKGBUILD"
+          cp packaging/aur/.SRCINFO "$AUR_DIR/.SRCINFO"
+
+          git -C "$AUR_DIR" config user.name "$AUR_USERNAME"
+          git -C "$AUR_DIR" config user.email "$AUR_EMAIL"
+          git -C "$AUR_DIR" add PKGBUILD .SRCINFO
+
+          if git -C "$AUR_DIR" diff --cached --quiet; then
+            echo "AUR package is already up to date."
+            exit 0
+          fi
+
+          git -C "$AUR_DIR" commit -m "Update to ${PACKAGE_VERSION}"
+          git -C "$AUR_DIR" push origin HEAD:master
