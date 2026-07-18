@@ -5,6 +5,10 @@ on:
     branches:
       - main
     paths-ignore:
+      - "AGENTS.md"
+      - "**/AGENTS.md"
+      - "WORK.md"
+      - ".gitignore"
       - ".github/workflows/*.yml"
       - "**/LICENSE"
       - "**/*.md"
