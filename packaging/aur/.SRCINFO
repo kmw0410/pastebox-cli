@@ -1,0 +1,13 @@
+pkgbase = pastebox-cli
+	pkgdesc = Terminal client for the Pastebox text sharing service
+	pkgver = 26.07.18.2
+	pkgrel = 1
+	url = https://github.com/kmw0410/pastebox-cli
+	arch = x86_64
+	arch = aarch64
+	license = MIT
+	makedepends = go>=1.26.4
+	source = pastebox-cli-26.07.18.2.tar.gz::https://github.com/kmw0410/pastebox-cli/archive/refs/tags/v26.07.18-2.tar.gz
+	sha256sums = 288f3c6d1c4de6108a5c873f8d3fd62bf5231a612e2bc0d8538b9b7d854bf60c
+
+pkgname = pastebox-cli

@@ -1,0 +1,37 @@
+pkgname=pastebox-cli
+pkgver=26.07.18.2
+pkgrel=1
+pkgdesc="Terminal client for the Pastebox text sharing service"
+arch=('x86_64' 'aarch64')
+url="https://github.com/kmw0410/pastebox-cli"
+license=('MIT')
+makedepends=('go>=1.26.4')
+_tag=v26.07.18-2
+_commit=ecb00d2
+source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/${_tag}.tar.gz")
+sha256sums=('288f3c6d1c4de6108a5c873f8d3fd62bf5231a612e2bc0d8538b9b7d854bf60c')
+
+build() {
+  cd "${pkgname}-${_tag#v}"
+
+  CGO_ENABLED=0 go build \
+    -buildvcs=false \
+    -trimpath \
+    -ldflags "-s -w -X main.version=${_tag} -X main.commit=${_commit}" \
+    -o pb .
+}
+
+check() {
+  cd "${pkgname}-${_tag#v}"
+
+  CGO_ENABLED=0 go test -buildvcs=false ./...
+}
+
+package() {
+  cd "${pkgname}-${_tag#v}"
+
+  install -Dm755 pb "${pkgdir}/usr/bin/pb"
+  install -Dm644 LICENSE "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+  install -Dm644 package.md "${pkgdir}/usr/share/doc/${pkgname}/package.md"
+  install -Dm644 package_ko.md "${pkgdir}/usr/share/doc/${pkgname}/package_ko.md"
+}
