@@ -89,5 +89,6 @@ GitHub Release에서 다음 Linux 패키지를 제공합니다.
 |---|---|---|
 | Debian / Ubuntu | `amd64.deb` | `arm64.deb` |
 | Arch Linux 계열 | `x86_64.pkg.tar.zst` | `aarch64.pkg.tar.zst` |
+| RHEL 계열 | `x86_64.rpm` | 제공하지 않음 |
 
 설치와 설정의 자세한 내용은 [package_ko.md](./package_ko.md)를 참고하세요.

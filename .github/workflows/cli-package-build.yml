@@ -112,12 +112,19 @@ jobs:
               --config packaging/nfpm.yaml \
               --packager archlinux \
               --target "dist/pastebox-cli-${PACKAGE_VERSION}-1-${ARCH_ARCH}.pkg.tar.zst"
+
+            if [ "$ARCH" = "amd64" ]; then
+              nfpm package \
+                --config packaging/nfpm.yaml \
+                --packager rpm \
+                --target "dist/pastebox-cli-${PACKAGE_VERSION}-1.x86_64.rpm"
+            fi
           done
 
           printf '%s\n' "$TAG" > dist/release-tag.txt
           (
             cd dist
-            sha256sum ./*.deb ./*.pkg.tar.zst > checksums.txt
+            sha256sum ./*.deb ./*.pkg.tar.zst ./*.rpm > checksums.txt
           )
 
       - name: Set up QEMU for package tests
@@ -157,6 +164,13 @@ jobs:
             archlinux:base \
             sh -c "bsdtar -xOf /dist/${ARM_ARCH_FILE} .PKGINFO | grep -F 'arch = aarch64'"
 
+          RPM_FILE="pastebox-cli-${PACKAGE_VERSION}-1.x86_64.rpm"
+          docker run --rm \
+            --platform linux/amd64 \
+            -v "$PWD/dist:/dist:ro" \
+            rockylinux:9-minimal \
+            sh -c "rpm --install /dist/${RPM_FILE} && pb version | grep -F '${TAG}'"
+
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
         with:
@@ -164,6 +178,7 @@ jobs:
           path: |
             dist/*.deb
             dist/*.pkg.tar.zst
+            dist/*.rpm
             dist/checksums.txt
             dist/release-tag.txt
           if-no-files-found: error

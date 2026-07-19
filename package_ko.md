@@ -10,6 +10,7 @@ GitHub Release에서 다음 Linux 패키지를 제공합니다.
 |---|---|---|
 | Debian / Ubuntu | `amd64.deb` | `arm64.deb` |
 | Arch Linux 계열 | `x86_64.pkg.tar.zst` | `aarch64.pkg.tar.zst` |
+| RHEL 계열 | `x86_64.rpm` | 제공하지 않음 |
 
 ## 설치
 
@@ -27,7 +28,14 @@ Arch Linux, Manjaro 또는 EndeavourOS:
 sudo pacman -U ./pastebox-cli-VERSION-1-x86_64.pkg.tar.zst
 ```
 
+x86-64 RHEL, Rocky Linux, AlmaLinux 또는 Fedora:
+
+```bash
+sudo dnf install ./pastebox-cli-VERSION-1.x86_64.rpm
+```
+
 64비트 ARM 시스템에서는 Debian `arm64` 패키지 또는 Arch `aarch64` 패키지를 사용합니다.
+RPM 패키지는 x86-64 시스템에만 제공합니다.
 
 ## 설정
 
@@ -171,6 +179,12 @@ Arch Linux 계열:
 
 ```bash
 sudo pacman -R pastebox-cli
+```
+
+RHEL 계열 또는 Fedora:
+
+```bash
+sudo dnf remove pastebox-cli
 ```
 
 패키지를 제거해도 `~/.config/pastebox/config.json`은 삭제하지 않습니다.

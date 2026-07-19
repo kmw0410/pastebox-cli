@@ -89,5 +89,6 @@ GitHub Releases publish these Linux package formats:
 |---|---|---|
 | Debian / Ubuntu | `amd64.deb` | `arm64.deb` |
 | Arch Linux family | `x86_64.pkg.tar.zst` | `aarch64.pkg.tar.zst` |
+| RHEL family | `x86_64.rpm` | Not provided |
 
 Detailed install and config instructions live in [package.md](./package.md).

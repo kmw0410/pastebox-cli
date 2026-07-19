@@ -80,6 +80,7 @@ jobs:
             echo
             echo "- Debian / Ubuntu: .deb"
             echo "- Arch Linux: .pkg.tar.zst"
+            echo "- RHEL family (x86_64): .rpm"
             echo "- [CLI installation and usage](https://github.com/${GITHUB_REPOSITORY}/blob/${TAG}/package.md)"
             echo
             echo "## Changes"
@@ -103,7 +104,7 @@ jobs:
           if gh release view "$TAG" >/dev/null 2>&1; then
             RELEASE_ASSETS="$(gh release view "$TAG" --json assets --jq '.assets[].name')"
             MISSING=0
-            for FILE in "$PACKAGE_DIR"/*.deb "$PACKAGE_DIR"/*.pkg.tar.zst "$PACKAGE_DIR/checksums.txt"; do
+            for FILE in "$PACKAGE_DIR"/*.deb "$PACKAGE_DIR"/*.pkg.tar.zst "$PACKAGE_DIR"/*.rpm "$PACKAGE_DIR/checksums.txt"; do
               NAME="$(basename "$FILE")"
               if ! grep -Fxq "$NAME" <<< "$RELEASE_ASSETS"; then
                 echo "Immutable release $TAG is missing asset: $NAME" >&2
@@ -121,6 +122,7 @@ jobs:
           gh release create "$TAG" \
             "$PACKAGE_DIR"/*.deb \
             "$PACKAGE_DIR"/*.pkg.tar.zst \
+            "$PACKAGE_DIR"/*.rpm \
             "$PACKAGE_DIR/checksums.txt" \
             --verify-tag \
             --title "$TAG" \

@@ -10,6 +10,7 @@ GitHub Releases provide packages for these Linux architectures:
 |---|---|---|
 | Debian / Ubuntu | `amd64.deb` | `arm64.deb` |
 | Arch Linux family | `x86_64.pkg.tar.zst` | `aarch64.pkg.tar.zst` |
+| RHEL family | `x86_64.rpm` | Not provided |
 
 ## Install
 
@@ -27,7 +28,14 @@ Arch Linux, Manjaro, or EndeavourOS:
 sudo pacman -U ./pastebox-cli-VERSION-1-x86_64.pkg.tar.zst
 ```
 
+RHEL, Rocky Linux, AlmaLinux, or Fedora on x86-64:
+
+```bash
+sudo dnf install ./pastebox-cli-VERSION-1.x86_64.rpm
+```
+
 Use the `arm64` Debian package or `aarch64` Arch package on 64-bit ARM systems.
+The RPM package is available only for x86-64 systems.
 
 ## Configure
 
@@ -171,6 +179,12 @@ Arch Linux family:
 
 ```bash
 sudo pacman -R pastebox-cli
+```
+
+RHEL family or Fedora:
+
+```bash
+sudo dnf remove pastebox-cli
 ```
 
 Package removal does not delete `~/.config/pastebox/config.json`.
