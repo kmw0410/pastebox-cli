@@ -18,9 +18,13 @@ Pastebox 텍스트 업로드/원문 조회용 터미널 클라이언트
 pastebox-cli/
 ├── .github/
 │   └── workflows/
+│       ├── arch-package-build.yml
+│       ├── aur-publish.yml
 │       ├── cli-package-build.yml
+│       ├── deb-package-build.yml
 │       ├── release-build.yml
-│       └── release.yml
+│       ├── release.yml
+│       └── rpm-package-build.yml
 ├── LICENSE
 ├── README.md
 ├── README_ko.md
@@ -39,6 +43,11 @@ pastebox-cli/
 └── packaging/
     └── nfpm.yaml
 ```
+
+Debian, Arch, RPM 패키지 빌드 워크플로는 기존 릴리스 태그를 지정하여 각각
+수동 실행할 수 있습니다. 자동 릴리스에서는 `cli-package-build.yml`이 세
+워크플로를 호출하고 결과물을 합쳐 `release.yml`로 전달합니다.
+`aur-publish.yml`은 릴리스 이후 독립적으로 게시하는 워크플로로 유지됩니다.
 
 ### 어떻게 사용하나요?
 1. GitHub Release에서 맞는 패키지를 내려받거나 `go build`로 직접 빌드합니다.

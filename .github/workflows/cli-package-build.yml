@@ -13,13 +13,18 @@ on:
         required: true
         type: string
 
-jobs:
-  package:
-    if: github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
+permissions:
+  actions: read
+  contents: read
 
-    permissions:
-      contents: read
+jobs:
+  resolve:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.tag.outputs.tag }}
 
     steps:
       - name: Checkout
@@ -51,127 +56,70 @@ jobs:
             exit 1
           fi
 
-          git checkout --detach "$TAG"
-
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Using tag: $TAG"
 
-      - name: Set up Go
-        uses: actions/setup-go@v6
+  deb:
+    needs: resolve
+    uses: ./.github/workflows/deb-package-build.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+
+  arch:
+    needs: resolve
+    uses: ./.github/workflows/arch-package-build.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+
+  rpm:
+    needs: resolve
+    uses: ./.github/workflows/rpm-package-build.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+
+  collect:
+    needs:
+      - resolve
+      - deb
+      - arch
+      - rpm
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download Debian packages
+        uses: actions/download-artifact@v5
         with:
-          go-version-file: go.mod
-          cache: false
+          name: pastebox-cli-deb-packages
+          path: ${{ runner.temp }}/deb
 
-      - name: Run CLI tests
-        shell: bash
-        run: go test ./...
+      - name: Download Arch packages
+        uses: actions/download-artifact@v5
+        with:
+          name: pastebox-cli-arch-packages
+          path: ${{ runner.temp }}/arch
 
-      - name: Install nFPM
-        shell: bash
-        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+      - name: Download RPM packages
+        uses: actions/download-artifact@v5
+        with:
+          name: pastebox-cli-rpm-packages
+          path: ${{ runner.temp }}/rpm
 
-      - name: Build CLI binaries
-        shell: bash
-        run: |
-          TAG="${{ steps.tag.outputs.tag }}"
-          SHORT_SHA="$(git rev-parse --short HEAD)"
-          mkdir -p dist/build
-
-          for ARCH in amd64 arm64; do
-            CGO_ENABLED=0 GOOS=linux GOARCH="$ARCH" go build \
-              -trimpath \
-              -ldflags "-s -w -X main.version=${TAG} -X main.commit=${SHORT_SHA}" \
-              -o "dist/build/pb_${ARCH}" .
-          done
-
-      - name: Build Linux packages
+      - name: Collect release packages
+        env:
+          TAG: ${{ needs.resolve.outputs.tag }}
         shell: bash
         run: |
-          TAG="${{ steps.tag.outputs.tag }}"
-          PACKAGE_VERSION="${TAG#v}"
-          PACKAGE_VERSION="${PACKAGE_VERSION//-/.}"
-
-          for ARCH in amd64 arm64; do
-            if [ "$ARCH" = "amd64" ]; then
-              DEB_ARCH="amd64"
-              ARCH_ARCH="x86_64"
-            else
-              DEB_ARCH="arm64"
-              ARCH_ARCH="aarch64"
-            fi
-
-            export PACKAGE_ARCH="$ARCH"
-            export PACKAGE_VERSION
-            export PACKAGE_BINARY="$PWD/dist/build/pb_${ARCH}"
-
-            nfpm package \
-              --config packaging/nfpm.yaml \
-              --packager deb \
-              --target "dist/pastebox-cli_${PACKAGE_VERSION}-1_${DEB_ARCH}.deb"
-            nfpm package \
-              --config packaging/nfpm.yaml \
-              --packager archlinux \
-              --target "dist/pastebox-cli-${PACKAGE_VERSION}-1-${ARCH_ARCH}.pkg.tar.zst"
-
-            if [ "$ARCH" = "amd64" ]; then
-              nfpm package \
-                --config packaging/nfpm.yaml \
-                --packager rpm \
-                --target "dist/pastebox-cli-${PACKAGE_VERSION}-1.x86_64.rpm"
-            fi
-          done
-
+          mkdir -p dist
+          cp "$RUNNER_TEMP"/deb/*.deb dist/
+          cp "$RUNNER_TEMP"/arch/*.pkg.tar.zst dist/
+          cp "$RUNNER_TEMP"/rpm/*.rpm dist/
           printf '%s\n' "$TAG" > dist/release-tag.txt
           (
             cd dist
             sha256sum ./*.deb ./*.pkg.tar.zst ./*.rpm > checksums.txt
           )
 
-      - name: Set up QEMU for package tests
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm64
-
-      - name: Verify Linux packages
-        shell: bash
-        run: |
-          TAG="${{ steps.tag.outputs.tag }}"
-          PACKAGE_VERSION="${TAG#v}"
-          PACKAGE_VERSION="${PACKAGE_VERSION//-/.}"
-
-          for ENTRY in "amd64:amd64" "arm64:arm64"; do
-            PLATFORM="${ENTRY%%:*}"
-            DEB_ARCH="${ENTRY##*:}"
-            DEB_FILE="pastebox-cli_${PACKAGE_VERSION}-1_${DEB_ARCH}.deb"
-            docker run --rm \
-              --platform "linux/${PLATFORM}" \
-              -v "$PWD/dist:/dist:ro" \
-              debian:stable-slim \
-              sh -c "dpkg -i /dist/${DEB_FILE} && pb version | grep -F '${TAG}'"
-          done
-
-          ARCH_FILE="pastebox-cli-${PACKAGE_VERSION}-1-x86_64.pkg.tar.zst"
-          docker run --rm \
-            --platform linux/amd64 \
-            -v "$PWD/dist:/dist:ro" \
-            archlinux:base \
-            sh -c "pacman -U --noconfirm /dist/${ARCH_FILE} && pb version | grep -F '${TAG}'"
-
-          ARM_ARCH_FILE="pastebox-cli-${PACKAGE_VERSION}-1-aarch64.pkg.tar.zst"
-          docker run --rm \
-            --platform linux/amd64 \
-            -v "$PWD/dist:/dist:ro" \
-            archlinux:base \
-            sh -c "bsdtar -xOf /dist/${ARM_ARCH_FILE} .PKGINFO | grep -F 'arch = aarch64'"
-
-          RPM_FILE="pastebox-cli-${PACKAGE_VERSION}-1.x86_64.rpm"
-          docker run --rm \
-            --platform linux/amd64 \
-            -v "$PWD/dist:/dist:ro" \
-            rockylinux:9-minimal \
-            sh -c "rpm --install /dist/${RPM_FILE} && pb version | grep -F '${TAG}'"
-
-      - name: Upload package artifact
+      - name: Upload combined release artifact
         uses: actions/upload-artifact@v4
         with:
           name: pastebox-cli-packages

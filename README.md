@@ -18,9 +18,13 @@ Packages: [installation and usage](./package.md)
 pastebox-cli/
 ├── .github/
 │   └── workflows/
+│       ├── arch-package-build.yml
+│       ├── aur-publish.yml
 │       ├── cli-package-build.yml
+│       ├── deb-package-build.yml
 │       ├── release-build.yml
-│       └── release.yml
+│       ├── release.yml
+│       └── rpm-package-build.yml
 ├── LICENSE
 ├── README.md
 ├── README_ko.md
@@ -39,6 +43,11 @@ pastebox-cli/
 └── packaging/
     └── nfpm.yaml
 ```
+
+The Debian, Arch, and RPM package build workflows can each be run manually for
+an existing release tag. `cli-package-build.yml` calls all three workflows for
+the automatic release flow and combines their artifacts for `release.yml`.
+`aur-publish.yml` remains an independent post-release publishing workflow.
 
 ### How to use?
 1. Download a package from the matching GitHub Release, or build the binary locally with `go build`.

@@ -1,0 +1,117 @@
+name: RHEL RPM Package Build
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to package as rpm
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate and checkout release tag
+        id: tag
+        env:
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          git fetch --tags --force
+          if [[ ! "$TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
+            echo "Invalid tag input: $TAG" >&2
+            exit 1
+          fi
+          git rev-parse --verify "${TAG}^{commit}" >/dev/null
+          git checkout --detach "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Run CLI tests
+        shell: bash
+        run: go test ./...
+
+      - name: Install nFPM
+        shell: bash
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+
+      - name: Build RPM package
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        shell: bash
+        run: |
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          NORMALIZED_VERSION="${TAG#v}"
+          NORMALIZED_VERSION="${NORMALIZED_VERSION//-/.}"
+          BINARY="$PWD/dist/build/pb_amd64"
+          mkdir -p dist/build
+
+          CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+            -trimpath \
+            -ldflags "-s -w -X main.version=${TAG} -X main.commit=${SHORT_SHA}" \
+            -o "$BINARY" .
+
+          PACKAGE_ARCH=amd64 \
+          PACKAGE_VERSION="$NORMALIZED_VERSION" \
+          PACKAGE_BINARY="$BINARY" \
+            nfpm package \
+              --config packaging/nfpm.yaml \
+              --packager rpm \
+              --target "dist/pastebox-cli-${NORMALIZED_VERSION}-1.x86_64.rpm"
+
+      - name: Verify RPM package
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        shell: bash
+        run: |
+          PACKAGE_VERSION="${TAG#v}"
+          PACKAGE_VERSION="${PACKAGE_VERSION//-/.}"
+          RPM_FILE="pastebox-cli-${PACKAGE_VERSION}-1.x86_64.rpm"
+
+          docker run --rm \
+            --platform linux/amd64 \
+            -v "$PWD/dist:/dist:ro" \
+            rockylinux:9-minimal \
+            sh -c "rpm --install /dist/${RPM_FILE} && pb version | grep -F '${TAG}'"
+
+      - name: Write package metadata
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+        shell: bash
+        run: |
+          printf '%s\n' "$TAG" > dist/release-tag.txt
+          (
+            cd dist
+            sha256sum ./*.rpm > checksums.txt
+          )
+
+      - name: Upload RPM package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pastebox-cli-rpm-packages
+          path: |
+            dist/*.rpm
+            dist/checksums.txt
+            dist/release-tag.txt
+          if-no-files-found: error
+          retention-days: 7
