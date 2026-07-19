@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
 	"strings"
@@ -65,7 +66,7 @@ func TestLoadConfigMissingFile(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected error")
 	}
-	for _, want := range []string{path, "Run pb without arguments", "set server_url"} {
+	for _, want := range []string{path, "Run pb without arguments", "pb config set server <URL>"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("error = %q, want %q", err, want)
 		}
@@ -102,5 +103,99 @@ func TestInitializeConfig(t *testing.T) {
 	}
 	if created {
 		t.Fatal("existing config was overwritten")
+	}
+}
+
+func TestRunConfigSetServerAndShow(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "nested", "pastebox", "config.json")
+	app, stdout, stderr := testApplication(path, bytes.NewReader(nil))
+	if code := app.run([]string{"config", "set", "server", " https://example.com/pastebox/ "}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
+	}
+	if got := stdout.String(); !strings.Contains(got, "updated config: "+path) || !strings.Contains(got, "server_url: https://example.com/pastebox") {
+		t.Fatalf("stdout = %q", got)
+	}
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if string(data) != "{\n  \"server_url\": \"https://example.com/pastebox\"\n}\n" {
+		t.Fatalf("config = %q", data)
+	}
+	info, err := os.Stat(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Mode().Perm() != 0o600 {
+		t.Fatalf("config mode = %o", info.Mode().Perm())
+	}
+
+	stdout.Reset()
+	stderr.Reset()
+	if code := app.run([]string{"config", "show"}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
+	}
+	if got := stdout.String(); !strings.Contains(got, "config: "+path) || !strings.Contains(got, "server_url: https://example.com/pastebox") {
+		t.Fatalf("stdout = %q", got)
+	}
+}
+
+func TestRunConfigSetServerUpdatesInitializedConfig(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "pastebox", "config.json")
+	created, err := initializeConfig(path)
+	if err != nil || !created {
+		t.Fatalf("created = %v, err = %v", created, err)
+	}
+
+	app, _, stderr := testApplication(path, bytes.NewReader(nil))
+	if code := app.run([]string{"config", "set", "server", "https://paste.example.com"}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
+	}
+	cfg, err := loadConfig(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.ServerURL != "https://paste.example.com" {
+		t.Fatalf("ServerURL = %q", cfg.ServerURL)
+	}
+}
+
+func TestRunConfigSetServerRejectsInvalidURLWithoutChangingFile(t *testing.T) {
+	path := writeTestConfig(t, "{\n  \"server_url\": \"https://original.example\"\n}\n")
+	before, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	app, _, stderr := testApplication(path, bytes.NewReader(nil))
+	if code := app.run([]string{"config", "set", "server", "ftp://invalid.example"}); code != 2 {
+		t.Fatalf("exit = %d", code)
+	}
+	if !strings.Contains(stderr.String(), "must use http:// or https://") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+	after, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !bytes.Equal(after, before) {
+		t.Fatalf("config changed: before %q, after %q", before, after)
+	}
+}
+
+func TestRunConfigUsage(t *testing.T) {
+	app, _, stderr := testApplication("unused", bytes.NewReader(nil))
+	for _, args := range [][]string{
+		{"config"},
+		{"config", "set", "server"},
+		{"config", "set", "unknown", "https://example.com"},
+	} {
+		stderr.Reset()
+		if code := app.run(args); code != 2 {
+			t.Fatalf("args = %v, exit = %d", args, code)
+		}
+		if !strings.Contains(stderr.String(), "pb config set server <URL>") {
+			t.Fatalf("args = %v, stderr = %q", args, stderr.String())
+		}
 	}
 }

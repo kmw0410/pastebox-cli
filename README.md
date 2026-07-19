@@ -52,12 +52,14 @@ the automatic release flow and combines their artifacts for `release.yml`.
 ### How to use?
 1. Download a package from the matching GitHub Release, or build the binary locally with `go build`.
 2. Copy the bundled `config.json` example to `~/.config/pastebox/config.json`, or run `pb` once to create it automatically.
-3. Set `server_url`, then use `pb` for uploads and `pb get` for raw retrieval.
+3. Run `pb config set server <URL>`, then use `pb` for uploads and `pb get` for raw retrieval.
 
 ### Commands
 ```text
 pb [options] [file|-]
 pb get [--password PASSWORD] <code|url>
+pb config show
+pb config set server <URL>
 pb config validate
 pb version
 ```

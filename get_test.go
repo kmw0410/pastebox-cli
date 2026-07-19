@@ -74,7 +74,7 @@ func TestRunWithoutArgumentsCreatesConfig(t *testing.T) {
 	if code := app.run(nil); code != 0 {
 		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
 	}
-	if !strings.Contains(stdout.String(), "created config: "+path) || !strings.Contains(stdout.String(), "Edit server_url") {
+	if !strings.Contains(stdout.String(), "created config: "+path) || !strings.Contains(stdout.String(), "pb config set server <URL>") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 	data, err := os.ReadFile(path)

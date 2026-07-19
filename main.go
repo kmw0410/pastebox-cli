@@ -17,6 +17,8 @@ var (
 const usageText = `Usage:
   pb [options] [file|-]
   pb get [--password PASSWORD] <code|url>
+  pb config show
+  pb config set server <URL>
   pb config validate
   pb version
 
@@ -76,18 +78,42 @@ func (a application) run(args []string) int {
 }
 
 func (a application) runConfig(args []string) int {
-	if len(args) != 1 || args[0] != "validate" {
-		fmt.Fprintln(a.stderr, "usage: pb config validate")
-		return 2
-	}
+	switch {
+	case len(args) == 1 && args[0] == "show":
+		cfg, err := loadConfig(a.configPath)
+		if err != nil {
+			fmt.Fprintln(a.stderr, err)
+			return 2
+		}
+		fmt.Fprintf(a.stdout, "config: %s\nserver_url: %s\n", a.configPath, cfg.ServerURL)
+		return 0
 
-	cfg, err := loadConfig(a.configPath)
-	if err != nil {
-		fmt.Fprintln(a.stderr, err)
+	case len(args) == 1 && args[0] == "validate":
+		cfg, err := loadConfig(a.configPath)
+		if err != nil {
+			fmt.Fprintln(a.stderr, err)
+			return 2
+		}
+		fmt.Fprintf(a.stdout, "valid config: %s\nserver_url: %s\n", a.configPath, cfg.ServerURL)
+		return 0
+
+	case len(args) == 3 && args[0] == "set" && args[1] == "server":
+		serverURL, err := validateServerURL(a.configPath, args[2])
+		if err != nil {
+			fmt.Fprintln(a.stderr, err)
+			return 2
+		}
+		if err := saveConfig(a.configPath, config{ServerURL: serverURL}); err != nil {
+			fmt.Fprintln(a.stderr, err)
+			return 2
+		}
+		fmt.Fprintf(a.stdout, "updated config: %s\nserver_url: %s\n", a.configPath, serverURL)
+		return 0
+
+	default:
+		fmt.Fprintln(a.stderr, "usage:\n  pb config show\n  pb config set server <URL>\n  pb config validate")
 		return 2
 	}
-	fmt.Fprintf(a.stdout, "valid config: %s\nserver_url: %s\n", a.configPath, cfg.ServerURL)
-	return 0
 }
 
 func (a application) runUpload(args []string) int {
@@ -121,7 +147,7 @@ func (a application) runUpload(args []string) int {
 			return 2
 		}
 		if created {
-			fmt.Fprintf(a.stdout, "created config: %s\nEdit server_url in this file before using pb.\n", a.configPath)
+			fmt.Fprintf(a.stdout, "created config: %s\nRun pb config set server <URL> before using pb.\n", a.configPath)
 			return 0
 		}
 	}

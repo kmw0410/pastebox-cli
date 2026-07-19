@@ -64,10 +64,16 @@ pb
 
 ```text
 created config: /home/user/.config/pastebox/config.json
-Edit server_url in this file before using pb.
+Run pb config set server <URL> before using pb.
 ```
 
-The generated file has user-only `0600` permissions and an empty `server_url`. Edit it and set your Pastebox server before uploading:
+The generated file has user-only `0600` permissions and an empty `server_url`. Set your Pastebox server without opening the file:
+
+```bash
+pb config set server https://paste.example.com
+```
+
+The command validates and normalizes the URL before atomically updating the configuration. The resulting file contains:
 
 ```json
 {
@@ -76,6 +82,12 @@ The generated file has user-only `0600` permissions and an empty `server_url`. E
 ```
 
 A server installed below a URL path is also supported, for example `https://example.com/pastebox`. Running `pb` again never overwrites an existing config file.
+
+Show the active configuration:
+
+```bash
+pb config show
+```
 
 Validate the file before uploading:
 

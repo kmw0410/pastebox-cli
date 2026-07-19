@@ -13,7 +13,7 @@ import (
 )
 
 type config struct {
-	ServerURL string
+	ServerURL string `json:"server_url"`
 }
 
 const initialConfig = "{\n  \"server_url\": \"\"\n}\n"
@@ -58,7 +58,7 @@ func loadConfig(path string) (config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
 		if errors.Is(err, os.ErrNotExist) {
-			return config{}, fmt.Errorf("config file not found: %s\n\nRun pb without arguments to create it, then set server_url before use", path)
+			return config{}, fmt.Errorf("config file not found: %s\n\nRun pb without arguments to create it, then run pb config set server <URL>", path)
 		}
 		return config{}, fmt.Errorf("cannot read config %s: %w", path, err)
 	}
@@ -90,33 +90,86 @@ func loadConfig(path string) (config, error) {
 	if err := json.Unmarshal(rawURL, &serverURL); err != nil {
 		return config{}, fmt.Errorf("invalid config %s: server_url must be a string", path)
 	}
+	serverURL, err = validateServerURL(path, serverURL)
+	if err != nil {
+		return config{}, err
+	}
+	return config{ServerURL: serverURL}, nil
+}
+
+func validateServerURL(path, serverURL string) (string, error) {
 	serverURL = strings.TrimSpace(serverURL)
 	if serverURL == "" {
-		return config{}, fmt.Errorf("invalid config %s: server_url must not be empty", path)
+		return "", fmt.Errorf("invalid config %s: server_url must not be empty", path)
 	}
 
 	parsed, err := url.Parse(serverURL)
 	if err != nil {
-		return config{}, fmt.Errorf("invalid config %s: server_url %q is not a valid URL: %v", path, serverURL, err)
+		return "", fmt.Errorf("invalid config %s: server_url %q is not a valid URL: %v", path, serverURL, err)
 	}
 	if parsed.Scheme != "http" && parsed.Scheme != "https" {
 		if parsed.Scheme == "" {
-			return config{}, fmt.Errorf("invalid config %s: server_url %q is missing http:// or https://", path, serverURL)
+			return "", fmt.Errorf("invalid config %s: server_url %q is missing http:// or https://", path, serverURL)
 		}
-		return config{}, fmt.Errorf("invalid config %s: server_url must use http:// or https://, not %s://", path, parsed.Scheme)
+		return "", fmt.Errorf("invalid config %s: server_url must use http:// or https://, not %s://", path, parsed.Scheme)
 	}
 	if parsed.Hostname() == "" {
-		return config{}, fmt.Errorf("invalid config %s: server_url must include a host", path)
+		return "", fmt.Errorf("invalid config %s: server_url must include a host", path)
 	}
 	if parsed.User != nil {
-		return config{}, fmt.Errorf("invalid config %s: server_url must not contain user credentials", path)
+		return "", fmt.Errorf("invalid config %s: server_url must not contain user credentials", path)
 	}
 	if parsed.RawQuery != "" || parsed.ForceQuery || parsed.Fragment != "" {
-		return config{}, fmt.Errorf("invalid config %s: server_url must not contain a query or fragment", path)
+		return "", fmt.Errorf("invalid config %s: server_url must not contain a query or fragment", path)
 	}
 
 	parsed.Path = strings.TrimRight(parsed.Path, "/")
-	return config{ServerURL: parsed.String()}, nil
+	return parsed.String(), nil
+}
+
+func saveConfig(path string, cfg config) error {
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return fmt.Errorf("cannot encode config %s: %w", path, err)
+	}
+	data = append(data, '\n')
+
+	directory := filepath.Dir(path)
+	if err := os.MkdirAll(directory, 0o700); err != nil {
+		return fmt.Errorf("cannot create config directory %s: %w", directory, err)
+	}
+	temporary, err := os.CreateTemp(directory, ".config.json.tmp-*")
+	if err != nil {
+		return fmt.Errorf("cannot create temporary config for %s: %w", path, err)
+	}
+	temporaryPath := temporary.Name()
+	removeTemporary := true
+	defer func() {
+		if removeTemporary {
+			_ = os.Remove(temporaryPath)
+		}
+	}()
+
+	if err := temporary.Chmod(0o600); err != nil {
+		_ = temporary.Close()
+		return fmt.Errorf("cannot secure temporary config for %s: %w", path, err)
+	}
+	if _, err := temporary.Write(data); err != nil {
+		_ = temporary.Close()
+		return fmt.Errorf("cannot write temporary config for %s: %w", path, err)
+	}
+	if err := temporary.Sync(); err != nil {
+		_ = temporary.Close()
+		return fmt.Errorf("cannot sync temporary config for %s: %w", path, err)
+	}
+	if err := temporary.Close(); err != nil {
+		return fmt.Errorf("cannot close temporary config for %s: %w", path, err)
+	}
+	if err := os.Rename(temporaryPath, path); err != nil {
+		return fmt.Errorf("cannot replace config %s: %w", path, err)
+	}
+	removeTemporary = false
+	return nil
 }
 
 func jsonConfigError(path string, data []byte, err error) error {

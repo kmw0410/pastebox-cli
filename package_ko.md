@@ -64,10 +64,16 @@ pb
 
 ```text
 created config: /home/user/.config/pastebox/config.json
-Edit server_url in this file before using pb.
+Run pb config set server <URL> before using pb.
 ```
 
-생성된 파일은 사용자만 읽고 쓸 수 있는 `0600` 권한이며 `server_url`은 빈 값입니다. 업로드하기 전에 실제 Pastebox 서버 주소로 수정하세요.
+생성된 파일은 사용자만 읽고 쓸 수 있는 `0600` 권한이며 `server_url`은 빈 값입니다. 파일을 열지 않고 실제 Pastebox 서버 주소를 설정할 수 있습니다.
+
+```bash
+pb config set server https://paste.example.com
+```
+
+이 명령은 URL을 검사하고 정규화한 후 설정 파일을 원자적으로 갱신합니다. 저장되는 파일은 다음과 같습니다.
 
 ```json
 {
@@ -76,6 +82,12 @@ Edit server_url in this file before using pb.
 ```
 
 `https://example.com/pastebox`처럼 하위 경로에 설치된 서버도 지원합니다. `pb`를 다시 실행해도 기존 설정 파일은 덮어쓰지 않습니다.
+
+현재 설정을 표시할 수 있습니다.
+
+```bash
+pb config show
+```
 
 업로드 전에 설정을 검사할 수 있습니다.
 
