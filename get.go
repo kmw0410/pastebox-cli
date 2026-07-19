@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,7 +9,7 @@ import (
 	"strings"
 )
 
-func getPaste(client *http.Client, cfg config, target, password string, output io.Writer) error {
+func getPaste(ctx context.Context, client *http.Client, cfg config, target, password string, output io.Writer) error {
 	requestURL, err := resolvePasteURL(cfg.ServerURL, target)
 	if err != nil {
 		return fmt.Errorf("invalid paste target: %w", err)
@@ -17,7 +18,7 @@ func getPaste(client *http.Client, cfg config, target, password string, output i
 	if err != nil {
 		return fmt.Errorf("invalid paste target: %w", err)
 	}
-	req, err := http.NewRequest(http.MethodGet, requestURL, nil)
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, requestURL, nil)
 	if err != nil {
 		return fmt.Errorf("create get request: %w", err)
 	}

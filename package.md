@@ -161,6 +161,19 @@ pb get --password 'PASTE_PASSWORD' AbC123
 
 The CLI accepts full paste URLs only when they belong to the server configured in `config.json`. This prevents accidentally sending a paste password to another host.
 
+## Command help and cancellation
+
+Show command-specific usage without reading the config file or contacting the server:
+
+```bash
+pb get --help
+pb config --help
+```
+
+Press `Ctrl-C` to cancel an active upload or retrieval request. Connection setup,
+TLS handshake, and response-header waits have bounded timeouts, while uploads do
+not have a whole-request timeout that would interrupt large streaming inputs.
+
 ## Exit codes
 
 | Code | Meaning |

@@ -1,12 +1,16 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"strings"
+	"time"
 )
 
 var (
@@ -33,6 +37,22 @@ Upload options:
   --json            print the JSON response
 `
 
+const getUsageText = `Usage:
+  pb get [--password PASSWORD] <code|url>
+`
+
+const configUsageText = `Usage:
+  pb config show
+  pb config set server <URL>
+  pb config validate
+`
+
+const (
+	connectTimeout        = 30 * time.Second
+	tlsHandshakeTimeout   = 10 * time.Second
+	responseHeaderTimeout = 30 * time.Second
+)
+
 type application struct {
 	stdin      io.Reader
 	stdout     io.Writer
@@ -40,6 +60,7 @@ type application struct {
 	httpClient *http.Client
 	configPath string
 	stdinTTY   bool
+	ctx        context.Context
 }
 
 func main() {
@@ -48,15 +69,37 @@ func main() {
 		stdinTTY = info.Mode()&os.ModeCharDevice != 0
 	}
 
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+	defer stop()
+
 	app := application{
 		stdin:      os.Stdin,
 		stdout:     os.Stdout,
 		stderr:     os.Stderr,
-		httpClient: http.DefaultClient,
+		httpClient: newHTTPClient(),
 		configPath: defaultConfigPath(),
 		stdinTTY:   stdinTTY,
+		ctx:        ctx,
 	}
 	os.Exit(app.run(os.Args[1:]))
+}
+
+func newHTTPClient() *http.Client {
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.DialContext = (&net.Dialer{
+		Timeout:   connectTimeout,
+		KeepAlive: 30 * time.Second,
+	}).DialContext
+	transport.TLSHandshakeTimeout = tlsHandshakeTimeout
+	transport.ResponseHeaderTimeout = responseHeaderTimeout
+	return &http.Client{Transport: transport}
+}
+
+func (a application) requestContext() context.Context {
+	if a.ctx != nil {
+		return a.ctx
+	}
+	return context.Background()
 }
 
 func (a application) run(args []string) int {
@@ -79,6 +122,10 @@ func (a application) run(args []string) int {
 
 func (a application) runConfig(args []string) int {
 	switch {
+	case len(args) == 1 && (args[0] == "--help" || args[0] == "-h"):
+		fmt.Fprint(a.stdout, configUsageText)
+		return 0
+
 	case len(args) == 1 && args[0] == "show":
 		cfg, err := loadConfig(a.configPath)
 		if err != nil {
@@ -111,7 +158,7 @@ func (a application) runConfig(args []string) int {
 		return 0
 
 	default:
-		fmt.Fprintln(a.stderr, "usage:\n  pb config show\n  pb config set server <URL>\n  pb config validate")
+		fmt.Fprint(a.stderr, configUsageText)
 		return 2
 	}
 }
@@ -177,7 +224,7 @@ func (a application) runUpload(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 2
 	}
-	result, raw, err := upload(a.httpClient, cfg, reader, filename, opts)
+	result, raw, err := upload(a.requestContext(), a.httpClient, cfg, reader, filename, opts)
 	if err != nil {
 		fmt.Fprintln(a.stderr, err)
 		return 1
@@ -190,6 +237,11 @@ func (a application) runUpload(args []string) int {
 }
 
 func (a application) runGet(args []string) int {
+	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
+		fmt.Fprint(a.stdout, getUsageText)
+		return 0
+	}
+
 	flags := flag.NewFlagSet("get", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	password := flags.String("password", "", "")
@@ -198,7 +250,7 @@ func (a application) runGet(args []string) int {
 		return 2
 	}
 	if flags.NArg() != 1 || strings.TrimSpace(flags.Arg(0)) == "" {
-		fmt.Fprintln(a.stderr, "usage: pb get [--password PASSWORD] <code|url>")
+		fmt.Fprint(a.stderr, getUsageText)
 		return 2
 	}
 
@@ -207,7 +259,7 @@ func (a application) runGet(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 2
 	}
-	if err := getPaste(a.httpClient, cfg, flags.Arg(0), *password, a.stdout); err != nil {
+	if err := getPaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), *password, a.stdout); err != nil {
 		fmt.Fprintln(a.stderr, err)
 		return 1
 	}

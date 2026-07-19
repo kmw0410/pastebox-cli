@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -63,7 +64,7 @@ func (o uploadOptions) policy() string {
 	}
 }
 
-func upload(client *http.Client, cfg config, input io.Reader, filename string, opts uploadOptions) (uploadResponse, []byte, error) {
+func upload(ctx context.Context, client *http.Client, cfg config, input io.Reader, filename string, opts uploadOptions) (uploadResponse, []byte, error) {
 	endpoint := strings.TrimRight(cfg.ServerURL, "/") + "/?format=json"
 	var body io.Reader = input
 	contentType := "text/plain; charset=utf-8"
@@ -84,7 +85,7 @@ func upload(client *http.Client, cfg config, input io.Reader, filename string, o
 		}()
 	}
 
-	req, err := http.NewRequest(http.MethodPost, endpoint, body)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, body)
 	if err != nil {
 		return uploadResponse{}, nil, fmt.Errorf("create upload request: %w", err)
 	}

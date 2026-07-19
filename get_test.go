@@ -31,6 +31,34 @@ func TestRunGet(t *testing.T) {
 	}
 }
 
+func TestRunCommandHelp(t *testing.T) {
+	tests := []struct {
+		name string
+		args []string
+		want string
+	}{
+		{name: "get long", args: []string{"get", "--help"}, want: "pb get [--password PASSWORD] <code|url>"},
+		{name: "get short", args: []string{"get", "-h"}, want: "pb get [--password PASSWORD] <code|url>"},
+		{name: "config long", args: []string{"config", "--help"}, want: "pb config set server <URL>"},
+		{name: "config short", args: []string{"config", "-h"}, want: "pb config set server <URL>"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			missingConfig := filepath.Join(t.TempDir(), "missing.json")
+			app, stdout, stderr := testApplication(missingConfig, strings.NewReader(""))
+			if code := app.run(tt.args); code != 0 {
+				t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+			}
+			if !strings.Contains(stdout.String(), tt.want) {
+				t.Fatalf("stdout = %q, want %q", stdout.String(), tt.want)
+			}
+			if stderr.Len() != 0 {
+				t.Fatalf("stderr = %q", stderr.String())
+			}
+		})
+	}
+}
+
 func TestResolvePasteURLRejectsDifferentServer(t *testing.T) {
 	_, err := resolvePasteURL("https://paste.example.com/base", "https://evil.example/abc")
 	if err == nil || !strings.Contains(err.Error(), "configured server") {

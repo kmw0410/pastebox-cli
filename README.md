@@ -64,6 +64,10 @@ pb config validate
 pb version
 ```
 
+Run `pb get --help` or `pb config --help` for command-specific usage. Active
+network requests can be canceled with `Ctrl-C`; connection setup, TLS handshake,
+and response-header waits are bounded without imposing a total upload timeout.
+
 ### Features
 1. **Streaming uploads**: Upload a file with its original filename or pipe stdin without loading the full input into memory.
 
