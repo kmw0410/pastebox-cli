@@ -100,10 +100,15 @@ pb get [--password PASSWORD] <code|url>
 pb config show
 pb config set server <URL>
 pb config validate
+pb update
 pb version
 ```
 
-Run `pb get --help` or `pb config --help` for command-specific usage. Active
+Run `pb get --help`, `pb config --help`, or `pb update --help` for
+command-specific usage. On Arch Linux family systems, `pb update` directs users
+to the AUR package. On Debian/Ubuntu and supported RHEL/Fedora systems, it
+downloads, verifies, and installs the matching latest GitHub Release package.
+Active
 network requests can be canceled with `Ctrl-C`; connection setup, TLS handshake,
 and response-header waits are bounded without imposing a total upload timeout.
 

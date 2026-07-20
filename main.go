@@ -24,6 +24,7 @@ const usageText = `Usage:
   pb config show
   pb config set server <URL>
   pb config validate
+  pb update
   pb version
 
 Upload options:
@@ -47,6 +48,10 @@ const configUsageText = `Usage:
   pb config validate
 `
 
+const updateUsageText = `Usage:
+  pb update
+`
+
 const (
 	connectTimeout        = 30 * time.Second
 	tlsHandshakeTimeout   = 10 * time.Second
@@ -54,13 +59,18 @@ const (
 )
 
 type application struct {
-	stdin      io.Reader
-	stdout     io.Writer
-	stderr     io.Writer
-	httpClient *http.Client
-	configPath string
-	stdinTTY   bool
-	ctx        context.Context
+	stdin         io.Reader
+	stdout        io.Writer
+	stderr        io.Writer
+	httpClient    *http.Client
+	configPath    string
+	stdinTTY      bool
+	ctx           context.Context
+	osReleasePath string
+	goarch        string
+	releaseAPIURL string
+	runCommand    func(context.Context, string, ...string) error
+	effectiveUID  func() int
 }
 
 func main() {
@@ -115,6 +125,8 @@ func (a application) run(args []string) int {
 			return a.runConfig(args[1:])
 		case "get":
 			return a.runGet(args[1:])
+		case "update":
+			return a.runUpdate(args[1:])
 		}
 	}
 	return a.runUpload(args)

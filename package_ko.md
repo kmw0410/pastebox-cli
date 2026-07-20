@@ -161,6 +161,32 @@ pb get --password 'PASTE_PASSWORD' AbC123
 
 CLI는 `config.json`에 설정된 서버에 속한 전체 URL만 허용합니다. 이를 통해 다른 호스트로 Paste 비밀번호가 잘못 전송되는 일을 방지합니다.
 
+## 업데이트
+
+지원되는 최신 패키지를 설치하려면 업데이트 명령을 직접 실행합니다.
+
+```bash
+pb update
+```
+
+Debian과 Ubuntu에서는 최신 GitHub Release에서 시스템에 맞는 `amd64` 또는
+`arm64` DEB를 선택해 임시 파일로 스트리밍하고, GitHub가 게시한 SHA-256
+digest를 검증한 다음 `apt-get`으로 설치합니다. x86-64 RHEL 계열과
+Fedora에서는 같은 방식으로 RPM을 검증하고 `dnf`로 설치합니다. 패키지
+관리자가 `sudo`를 통해 관리자 권한을 요청할 수 있습니다.
+
+Arch Linux 계열에서는 이 명령이 GitHub 패키지를 내려받지 않습니다. 대신
+다음 AUR 업데이트 명령을 안내합니다.
+
+```bash
+paru -S pastebox-cli
+# 또는
+yay -S pastebox-cli
+```
+
+이미 최신 버전이면 변경하지 않습니다. ARM 시스템에서는 RPM 자동 업데이트를
+지원하지 않습니다.
+
 ## 명령 도움말과 요청 취소
 
 설정 파일을 읽거나 서버에 접속하지 않고 명령별 사용법을 확인할 수 있습니다.
@@ -168,6 +194,7 @@ CLI는 `config.json`에 설정된 서버에 속한 전체 URL만 허용합니다
 ```bash
 pb get --help
 pb config --help
+pb update --help
 ```
 
 진행 중인 업로드 또는 조회 요청은 `Ctrl-C`로 취소할 수 있습니다. 연결, TLS

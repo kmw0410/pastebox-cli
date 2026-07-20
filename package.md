@@ -161,6 +161,33 @@ pb get --password 'PASTE_PASSWORD' AbC123
 
 The CLI accepts full paste URLs only when they belong to the server configured in `config.json`. This prevents accidentally sending a paste password to another host.
 
+## Update
+
+Run the explicit update command to install the latest supported package:
+
+```bash
+pb update
+```
+
+On Debian and Ubuntu, the command selects the matching `amd64` or `arm64` DEB
+from the latest GitHub Release, streams it to a temporary file, verifies the
+SHA-256 digest published by GitHub, and installs it with `apt-get`. On x86-64
+RHEL-family systems and Fedora, it performs the same process for the RPM and
+installs it with `dnf`. The package manager may ask for administrator access
+through `sudo`.
+
+Arch Linux family updates are not downloaded from GitHub by this command.
+Instead, it prints the AUR update commands:
+
+```bash
+paru -S pastebox-cli
+# or
+yay -S pastebox-cli
+```
+
+An already current installation is left unchanged. Automatic RPM updates are
+not available on ARM systems.
+
 ## Command help and cancellation
 
 Show command-specific usage without reading the config file or contacting the server:
@@ -168,6 +195,7 @@ Show command-specific usage without reading the config file or contacting the se
 ```bash
 pb get --help
 pb config --help
+pb update --help
 ```
 
 Press `Ctrl-C` to cancel an active upload or retrieval request. Connection setup,
