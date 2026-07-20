@@ -2,27 +2,57 @@ name: Release Build
 
 on:
   push:
-    branches:
-      - main
     paths-ignore:
-      - "AGENTS.md"
-      - "**/AGENTS.md"
-      - "WORK.md"
-      - ".gitignore"
-      - ".github/workflows/*.yml"
-      - "**/LICENSE"
       - "**/*.md"
-      - "**/*.jpg"
-      - "**/*.jpeg"
-      - "**/*.png"
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
   workflow_dispatch:
+
+permissions:
+  contents: read
 
 concurrency:
   group: release-build
   cancel-in-progress: false
 
 jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Check formatting
+        shell: bash
+        run: |
+          unformatted="$(gofmt -l .)"
+          if [ -n "$unformatted" ]; then
+            echo "The following files are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Run go vet
+        shell: bash
+        run: go vet ./...
+
+      - name: Run tests
+        shell: bash
+        run: go test ./...
+
   tag:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    needs: test
     runs-on: ubuntu-latest
 
     permissions:

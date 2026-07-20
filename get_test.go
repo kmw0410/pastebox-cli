@@ -2,12 +2,15 @@ package main
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"testing"
 )
 
@@ -28,6 +31,178 @@ func TestRunGet(t *testing.T) {
 	}
 	if stdout.String() != "paste content" {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunGetAllowsSafeRedirects(t *testing.T) {
+	tests := []struct {
+		name     string
+		location func(string) string
+	}{
+		{name: "same origin", location: func(serverURL string) string {
+			return serverURL + "/pastebox/final?raw=1"
+		}},
+		{name: "different path below base", location: func(serverURL string) string {
+			return serverURL + "/pastebox/nested/final?raw=1"
+		}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var server *httptest.Server
+			server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				switch r.URL.Path {
+				case "/pastebox/start":
+					http.Redirect(w, r, tt.location(server.URL), http.StatusFound)
+				case "/pastebox/final", "/pastebox/nested/final":
+					if r.Header.Get("paste-password") != "top-secret" {
+						t.Errorf("paste-password header = %q", r.Header.Get("paste-password"))
+					}
+					io.WriteString(w, "redirected paste")
+				default:
+					http.NotFound(w, r)
+				}
+			}))
+			defer server.Close()
+
+			app, stdout, stderr := testApplication(serverConfig(t, server.URL+"/pastebox"), strings.NewReader(""))
+			if code := app.run([]string{"get", "--password", "top-secret", "start"}); code != 0 {
+				t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
+			}
+			if stdout.String() != "redirected paste" {
+				t.Fatalf("stdout = %q", stdout.String())
+			}
+		})
+	}
+}
+
+func TestRunGetRejectsUnsafeRedirectsWithoutSendingPassword(t *testing.T) {
+	tests := []struct {
+		name         string
+		location     func(sourceURL, targetURL string) string
+		want         string
+		usesExternal bool
+	}{
+		{
+			name: "different hostname",
+			location: func(sourceURL, _ string) string {
+				parsed, _ := url.Parse(sourceURL + "/pastebox/blocked")
+				parsed.Host = "localhost:" + parsed.Port()
+				return parsed.String()
+			},
+			want: "hostname must remain",
+		},
+		{
+			name: "different port",
+			location: func(_, targetURL string) string {
+				return targetURL + "/pastebox/blocked"
+			},
+			want:         "port must remain",
+			usesExternal: true,
+		},
+		{
+			name: "different scheme",
+			location: func(sourceURL, _ string) string {
+				return "https" + strings.TrimPrefix(sourceURL, "http") + "/pastebox/blocked"
+			},
+			want: "scheme must remain",
+		},
+		{
+			name: "outside base path",
+			location: func(sourceURL, _ string) string {
+				return sourceURL + "/outside/blocked"
+			},
+			want: "below configured server path",
+		},
+		{
+			name: "user information",
+			location: func(_, targetURL string) string {
+				parsed, _ := url.Parse(targetURL + "/pastebox/blocked")
+				parsed.User = url.UserPassword("redirect-user", "redirect-secret")
+				return parsed.String()
+			},
+			want:         "contains user credentials",
+			usesExternal: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var externalReceivedPassword atomic.Bool
+			external := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("paste-password") != "" {
+					externalReceivedPassword.Store(true)
+				}
+				io.WriteString(w, "unsafe destination")
+			}))
+			defer external.Close()
+
+			var source *httptest.Server
+			var blockedReceivedPassword atomic.Bool
+			source = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.URL.Path == "/pastebox/start" {
+					http.Redirect(w, r, tt.location(source.URL, external.URL), http.StatusFound)
+					return
+				}
+				if r.Header.Get("paste-password") != "" {
+					blockedReceivedPassword.Store(true)
+				}
+				io.WriteString(w, "unsafe destination")
+			}))
+			defer source.Close()
+
+			app, stdout, stderr := testApplication(serverConfig(t, source.URL+"/pastebox"), strings.NewReader(""))
+			if code := app.run([]string{"get", "--password", "top-secret", "start"}); code != 1 {
+				t.Fatalf("exit = %d, stdout = %q, stderr = %q", code, stdout.String(), stderr.String())
+			}
+			if !strings.Contains(stderr.String(), tt.want) {
+				t.Fatalf("stderr = %q, want %q", stderr.String(), tt.want)
+			}
+			if strings.Contains(stderr.String(), "top-secret") || strings.Contains(stderr.String(), "redirect-secret") {
+				t.Fatalf("stderr exposed a secret: %q", stderr.String())
+			}
+			if blockedReceivedPassword.Load() {
+				t.Fatal("blocked source destination received paste-password")
+			}
+			if tt.usesExternal && externalReceivedPassword.Load() {
+				t.Fatal("blocked external destination received paste-password")
+			}
+		})
+	}
+}
+
+func TestRunGetRejectsTooManyRedirects(t *testing.T) {
+	var requests atomic.Int32
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		requestNumber := requests.Add(1)
+		if r.Header.Get("paste-password") != "top-secret" {
+			t.Errorf("request %d paste-password header = %q", requestNumber, r.Header.Get("paste-password"))
+		}
+		http.Redirect(w, r, fmt.Sprintf("/pastebox/redirect-%d", requestNumber), http.StatusFound)
+	}))
+	defer server.Close()
+
+	app, _, stderr := testApplication(serverConfig(t, server.URL+"/pastebox"), strings.NewReader(""))
+	if code := app.run([]string{"get", "--password", "top-secret", "start"}); code != 1 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "stopped after 10 redirects") {
+		t.Fatalf("stderr = %q", stderr.String())
+	}
+	if got := requests.Load(); got != maxGetRedirects {
+		t.Fatalf("requests = %d, want %d", got, maxGetRedirects)
+	}
+}
+
+func TestValidateGetRedirectRejectsHTTPSDowngrade(t *testing.T) {
+	base, err := url.Parse("https://paste.example.com/base")
+	if err != nil {
+		t.Fatal(err)
+	}
+	destination, err := url.Parse("http://paste.example.com:443/base/next")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := validateGetRedirect(base, destination); err == nil || !strings.Contains(err.Error(), "scheme must remain https") {
+		t.Fatalf("error = %v", err)
 	}
 }
 
