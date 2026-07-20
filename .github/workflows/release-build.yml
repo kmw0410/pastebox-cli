@@ -4,9 +4,15 @@ on:
   push:
     paths-ignore:
       - "**/*.md"
+      - ".gitignore"
+      - ".github/workflows/**"
+      - "**/LICENSE"
   pull_request:
     paths-ignore:
       - "**/*.md"
+      - ".gitignore"
+      - ".github/workflows/**"
+      - "**/LICENSE"
   workflow_dispatch:
 
 permissions:

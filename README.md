@@ -43,8 +43,6 @@ pastebox-cli/
 ├── get_test.go
 ├── output.go
 └── packaging/
-    ├── aur/
-    │   └── README.md
     └── nfpm.yaml
 ```
 
@@ -52,6 +50,43 @@ The Debian, Arch, and RPM package build workflows can each be run manually for
 an existing release tag. `cli-package-build.yml` calls all three workflows for
 the automatic release flow and combines their artifacts for `release.yml`.
 `aur-publish.yml` remains an independent post-release publishing workflow.
+
+### AUR packaging
+
+The repository-root `PKGBUILD` and `.SRCINFO` files prepare the source-based
+`pastebox-cli` AUR package. This repository is not an AUR repository and does
+not publish or push anything to the AUR by itself.
+
+For a new release:
+
+1. Set `_tag` in `PKGBUILD` to the exact Git release tag.
+2. Set `pkgver` to the tag without `v`, replacing each `-` with `.`.
+3. Set `_commit` to the short commit ID referenced by the tag.
+4. Reset `pkgrel` to `1` for a new upstream version.
+5. Update the source checksum and regenerate `.SRCINFO`:
+
+   ```bash
+   updpkgsums
+   makepkg --printsrcinfo > .SRCINFO
+   ```
+
+Keep the original tag in `_tag` so `pb version` matches GitHub Releases while
+the normalized `pkgver` remains valid for an Arch package version.
+
+Validate from the repository root on an Arch Linux system:
+
+```bash
+makepkg --verifysource
+makepkg --cleanbuild
+makepkg --printsrcinfo > .SRCINFO
+namcap PKGBUILD
+namcap pastebox-cli-*.pkg.tar.zst
+./pkg/pastebox-cli/usr/bin/pb version
+```
+
+`namcap` is optional. Before a future AUR submission, copy only `PKGBUILD` and
+`.SRCINFO` into the separate AUR Git repository and add the maintainer comment
+expected for that repository.
 
 ### How to use?
 1. Download a package from the matching GitHub Release, or build the binary locally with `go build`.
