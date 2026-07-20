@@ -9,7 +9,7 @@ import (
 func TestReleaseBuildRunsQualityChecksForPushAndPullRequest(t *testing.T) {
 	workflow := readWorkflow(t, ".github/workflows/release-build.yml")
 	for _, want := range []string{
-		"push:\n    paths-ignore:\n      - \"**/*.md\"\n      - \".gitignore\"\n      - \".github/workflows/**\"\n      - \"**/LICENSE\"",
+		"push:\n    paths-ignore:\n      - \"**/*.md\"\n      - \".gitignore\"\n      - \".github/workflows/**\"\n      - \"**/LICENSE\"\n      - \"**/*_test.go\"",
 		"pull_request:\n    paths-ignore:\n      - \"**/*.md\"\n      - \".gitignore\"\n      - \".github/workflows/**\"\n      - \"**/LICENSE\"",
 		"go-version-file: go.mod",
 		"cache: true",
