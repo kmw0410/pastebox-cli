@@ -25,7 +25,9 @@ pastebox-cli/
 │       ├── release-build.yml
 │       ├── release.yml
 │       └── rpm-package-build.yml
+├── .SRCINFO
 ├── LICENSE
+├── PKGBUILD
 ├── README.md
 ├── README_ko.md
 ├── config.json
@@ -41,6 +43,8 @@ pastebox-cli/
 ├── get_test.go
 ├── output.go
 └── packaging/
+    ├── aur/
+    │   └── README.md
     └── nfpm.yaml
 ```
 

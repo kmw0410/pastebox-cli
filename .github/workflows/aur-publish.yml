@@ -100,11 +100,11 @@ jobs:
             -e "s/^_tag=.*/_tag=${TAG}/" \
             -e "s/^_commit=.*/_commit=${SHORT_SHA}/" \
             -e "s/^sha256sums=.*/sha256sums=('${SOURCE_SHA256}')/" \
-            packaging/aur/PKGBUILD
+            PKGBUILD
 
           BUILD_DIR="$RUNNER_TEMP/aur-build"
           mkdir -p "$BUILD_DIR"
-          cp packaging/aur/PKGBUILD "$BUILD_DIR/PKGBUILD"
+          cp PKGBUILD "$BUILD_DIR/PKGBUILD"
           cp "$ARCHIVE" "$BUILD_DIR/pastebox-cli-${PACKAGE_VERSION}.tar.gz"
 
           echo "build_dir=$BUILD_DIR" >> "$GITHUB_OUTPUT"
@@ -139,7 +139,7 @@ jobs:
               file /build/pkg/pastebox-cli/usr/bin/pb | grep -F "statically linked"
             '
 
-          cp "$BUILD_DIR/.SRCINFO" packaging/aur/.SRCINFO
+          cp "$BUILD_DIR/.SRCINFO" .SRCINFO
 
       - name: Configure AUR SSH access
         env:
@@ -179,8 +179,8 @@ jobs:
             ssh://aur@aur.archlinux.org/pastebox-cli.git \
             "$AUR_DIR"
 
-          cp packaging/aur/PKGBUILD "$AUR_DIR/PKGBUILD"
-          cp packaging/aur/.SRCINFO "$AUR_DIR/.SRCINFO"
+          cp PKGBUILD "$AUR_DIR/PKGBUILD"
+          cp .SRCINFO "$AUR_DIR/.SRCINFO"
 
           git -C "$AUR_DIR" config user.name "$AUR_USERNAME"
           git -C "$AUR_DIR" config user.email "$AUR_EMAIL"

@@ -1,7 +1,8 @@
 # AUR Packaging
 
-This directory prepares the source-based `pastebox-cli` AUR package. It is
-not an AUR repository and does not publish or push anything to the AUR.
+The repository-root `PKGBUILD` and `.SRCINFO` files prepare the source-based
+`pastebox-cli` AUR package. This repository is not an AUR repository and does
+not publish or push anything to the AUR by itself.
 
 ## Update for a release
 
@@ -21,7 +22,7 @@ the normalized `pkgver` remains valid for an Arch package version.
 
 ## Validate locally
 
-Run these commands from this directory on an Arch Linux system:
+Run these commands from the repository root on an Arch Linux system:
 
 ```bash
 makepkg --verifysource
