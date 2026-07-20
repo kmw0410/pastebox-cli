@@ -202,7 +202,37 @@ Use this section to record recurring lessons from error-driven code fixes. Each 
 - Fix: how it was corrected, with a small code snippet when helpful.
 - Prevention: what to check before making similar changes again.
 
-No CLI-specific error-fix notes are recorded yet.
+### Source archive builds must disable automatic VCS stamping
+- Problematic code area: `packaging/aur/PKGBUILD` source archive build.
+- Cause: Go attempted to inspect VCS metadata even though GitHub tag archives do not include a `.git` directory, causing `error obtaining VCS status: exit status 128`.
+- Fix: Disable automatic VCS stamping because the release tag and commit are already injected explicitly:
+  ```bash
+  go build -buildvcs=false \
+    -ldflags "-X main.version=${_tag} -X main.commit=${_commit}"
+  ```
+- Prevention: When adding another archive-based Go package build, test the extracted archive rather than only the repository checkout and include `-buildvcs=false` when version metadata is supplied by `-ldflags`.
+
+### nFPM environment assignments must use distinct source variables
+- Problematic code area: distribution package build steps in `.github/workflows/*-package-build.yml`.
+- Cause: Inline assignments such as `PACKAGE_VERSION="$PACKAGE_VERSION" nfpm package` reused the destination environment variable name as the source shell variable, producing ShellCheck SC2097/SC2098 warnings and making expansion scope unclear.
+- Fix: Keep the normalized value in a distinct shell variable and pass it explicitly:
+  ```bash
+  NORMALIZED_VERSION="${TAG#v}"
+  PACKAGE_VERSION="$NORMALIZED_VERSION" nfpm package
+  ```
+- Prevention: Run `actionlint` after workflow shell changes and avoid reusing an inline command environment variable name for its source value.
+
+### Redirect errors must not echo destination user information
+- Problematic code area: `get.go` redirect rejection errors for `pb get`.
+- Cause: `http.Client.Do` wraps `CheckRedirect` errors in `url.Error`, whose text includes the rejected destination URL and can expose embedded user credentials.
+- Fix: Return a distinct application redirect error and unwrap it before formatting the request failure so the destination URL is omitted:
+  ```go
+  var redirectErr *getRedirectError
+  if errors.As(err, &redirectErr) {
+      return fmt.Errorf("request failed: %w", redirectErr)
+  }
+  ```
+- Prevention: Test redirect failures with credential-bearing URLs and assert that neither request headers nor URL-embedded secrets reach the destination or stderr.
 
 ## 15. Commit Message Examples
 Use short, conventional commit messages:
