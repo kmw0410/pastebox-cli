@@ -25,25 +25,31 @@ pastebox-cli/
 │       ├── release-build.yml
 │       ├── release.yml
 │       └── rpm-package-build.yml
+├── .gitignore
 ├── .SRCINFO
+├── AGENTS.md
 ├── LICENSE
 ├── PKGBUILD
 ├── README.md
 ├── README_ko.md
-├── config.json
-├── package.md
-├── package_ko.md
-├── go.mod
-├── main.go
 ├── config.go
+├── config.json
 ├── config_test.go
-├── upload.go
-├── upload_test.go
 ├── get.go
 ├── get_test.go
+├── go.mod
+├── main.go
+├── main_test.go
 ├── output.go
-└── packaging/
-    └── nfpm.yaml
+├── package.md
+├── package_ko.md
+├── packaging/
+│   └── nfpm.yaml
+├── update.go
+├── update_test.go
+├── upload.go
+├── upload_test.go
+└── workflow_test.go
 ```
 
 Debian, Arch, RPM 패키지 빌드 워크플로는 기존 릴리스 태그를 지정하여 각각
