@@ -25,21 +25,93 @@ func writeOSRelease(t *testing.T, content string) string {
 	return path
 }
 
-func TestRunUpdateGuidesArchUsersToAUR(t *testing.T) {
+func TestRunUpdateUsesParuForArch(t *testing.T) {
+	previousVersion := version
+	version = "v26.07.20-1"
+	t.Cleanup(func() { version = previousVersion })
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(latestRelease{TagName: "v26.07.21-1"})
+	}))
+	defer server.Close()
+
 	app, stdout, stderr := testApplication("", bytes.NewReader(nil))
 	app.osReleasePath = writeOSRelease(t, "ID=endeavouros\nID_LIKE=arch\n")
-	app.httpClient = &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-		t.Fatal("Arch update contacted GitHub")
-		return nil, nil
-	})}
+	app.releaseAPIURL = server.URL
+	app.httpClient = server.Client()
+	app.lookPath = func(name string) (string, error) {
+		return "/usr/bin/" + name, nil
+	}
+	var commandName string
+	var commandArgs []string
+	app.runCommand = func(_ context.Context, name string, args ...string) error {
+		commandName = name
+		commandArgs = append([]string(nil), args...)
+		return nil
+	}
 
 	if code := app.run([]string{"update"}); code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
-	for _, want := range []string{"distributed through AUR", "paru -S pastebox-cli", "yay -S pastebox-cli"} {
-		if !strings.Contains(stdout.String(), want) {
-			t.Errorf("stdout = %q, want %q", stdout.String(), want)
+	if commandName != "paru" || len(commandArgs) != 2 || commandArgs[0] != "-S" || commandArgs[1] != "pastebox-cli" {
+		t.Fatalf("command = %q %q", commandName, commandArgs)
+	}
+	if !strings.Contains(stdout.String(), "Updating pastebox-cli to v26.07.21-1 with paru") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
+func TestRunUpdateFallsBackToYayForArch(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(latestRelease{TagName: "v26.07.21-1"})
+	}))
+	defer server.Close()
+
+	app, _, stderr := testApplication("", bytes.NewReader(nil))
+	app.osReleasePath = writeOSRelease(t, "ID=arch\n")
+	app.releaseAPIURL = server.URL
+	app.httpClient = server.Client()
+	app.lookPath = func(name string) (string, error) {
+		if name == "yay" {
+			return "/usr/bin/yay", nil
 		}
+		return "", os.ErrNotExist
+	}
+	var commandName string
+	app.runCommand = func(_ context.Context, name string, _ ...string) error {
+		commandName = name
+		return nil
+	}
+
+	if code := app.run([]string{"update"}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if commandName != "yay" {
+		t.Fatalf("command = %q, want yay", commandName)
+	}
+}
+
+func TestRunUpdateGuidesArchUserWithoutAURHelper(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		json.NewEncoder(w).Encode(latestRelease{TagName: "v26.07.21-1"})
+	}))
+	defer server.Close()
+
+	app, stdout, stderr := testApplication("", bytes.NewReader(nil))
+	app.osReleasePath = writeOSRelease(t, "ID=arch\n")
+	app.releaseAPIURL = server.URL
+	app.httpClient = server.Client()
+	app.lookPath = func(string) (string, error) { return "", os.ErrNotExist }
+	app.runCommand = func(context.Context, string, ...string) error {
+		t.Fatal("AUR helper ran when none was installed")
+		return nil
+	}
+
+	if code := app.run([]string{"update"}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "Install paru or yay, then run pb update again") {
+		t.Fatalf("stdout = %q", stdout.String())
 	}
 }
 

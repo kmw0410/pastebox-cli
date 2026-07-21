@@ -70,6 +70,7 @@ type application struct {
 	goarch        string
 	releaseAPIURL string
 	runCommand    func(context.Context, string, ...string) error
+	lookPath      func(string) (string, error)
 	effectiveUID  func() int
 }
 

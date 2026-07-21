@@ -52,10 +52,7 @@ func (a application) runUpdate(args []string) int {
 		return 2
 	}
 	if distroMatches(distro, "arch") {
-		fmt.Fprintln(a.stdout, "Arch Linux updates are distributed through AUR.")
-		fmt.Fprintln(a.stdout, "Run: paru -S pastebox-cli")
-		fmt.Fprintln(a.stdout, "Or:  yay -S pastebox-cli")
-		return 0
+		return a.runArchUpdate()
 	}
 
 	target, err := selectUpdateTarget(distro, a.updateGOARCH())
@@ -92,6 +89,56 @@ func (a application) runUpdate(args []string) int {
 	}
 	fmt.Fprintf(a.stdout, "Updated pastebox-cli to %s.\n", release.TagName)
 	return 0
+}
+
+func (a application) runArchUpdate() int {
+	release, err := a.fetchLatestRelease()
+	if err != nil {
+		fmt.Fprintf(a.stderr, "cannot check for updates: %v\n", err)
+		return 1
+	}
+	if release.TagName == version {
+		fmt.Fprintf(a.stdout, "pastebox-cli is already up to date (%s).\n", version)
+		return 0
+	}
+
+	helper := a.findAURHelper()
+	if helper == "" {
+		fmt.Fprintln(a.stdout, "A newer pastebox-cli release is available, but neither paru nor yay is installed.")
+		fmt.Fprintln(a.stdout, "Install paru or yay, then run pb update again.")
+		return 0
+	}
+
+	fmt.Fprintf(a.stdout, "Updating pastebox-cli to %s with %s...\n", release.TagName, helper)
+	if err := a.executeCommand(helper, "-S", "pastebox-cli"); err != nil {
+		fmt.Fprintf(a.stderr, "cannot update with %s: %v\n", helper, err)
+		return 1
+	}
+	return 0
+}
+
+func (a application) findAURHelper() string {
+	lookPath := exec.LookPath
+	if a.lookPath != nil {
+		lookPath = a.lookPath
+	}
+	for _, name := range []string{"paru", "yay"} {
+		if _, err := lookPath(name); err == nil {
+			return name
+		}
+	}
+	return ""
+}
+
+func (a application) executeCommand(name string, args ...string) error {
+	if a.runCommand != nil {
+		return a.runCommand(a.requestContext(), name, args...)
+	}
+	cmd := exec.CommandContext(a.requestContext(), name, args...)
+	cmd.Stdin = a.stdin
+	cmd.Stdout = a.stdout
+	cmd.Stderr = a.stderr
+	return cmd.Run()
 }
 
 func (a application) updateOSReleasePath() string {
@@ -306,12 +353,5 @@ func (a application) installPackage(target updateTarget, packagePath string) err
 		args = append([]string{name}, args...)
 		name = "sudo"
 	}
-	if a.runCommand != nil {
-		return a.runCommand(a.requestContext(), name, args...)
-	}
-	cmd := exec.CommandContext(a.requestContext(), name, args...)
-	cmd.Stdin = a.stdin
-	cmd.Stdout = a.stdout
-	cmd.Stderr = a.stderr
-	return cmd.Run()
+	return a.executeCommand(name, args...)
 }

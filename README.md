@@ -105,8 +105,9 @@ pb version
 ```
 
 Run `pb get --help`, `pb config --help`, or `pb update --help` for
-command-specific usage. On Arch Linux family systems, `pb update` directs users
-to the AUR package. On Debian/Ubuntu and supported RHEL/Fedora systems, it
+command-specific usage. On Arch Linux family systems, `pb update` checks the
+latest release and updates the AUR package with an installed `paru` or `yay`.
+On Debian/Ubuntu and supported RHEL/Fedora systems, it
 downloads, verifies, and installs the matching latest GitHub Release package.
 Active
 network requests can be canceled with `Ctrl-C`; connection setup, TLS handshake,

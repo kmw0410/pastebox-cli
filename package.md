@@ -176,14 +176,18 @@ RHEL-family systems and Fedora, it performs the same process for the RPM and
 installs it with `dnf`. The package manager may ask for administrator access
 through `sudo`.
 
-Arch Linux family updates are not downloaded from GitHub by this command.
-Instead, it prints the AUR update commands:
+On Arch Linux family systems, the command checks the latest GitHub Release but
+does not download a package from it. When a newer release exists, it uses
+`paru` when available, or falls back to `yay`, to run the matching AUR update:
 
 ```bash
 paru -S pastebox-cli
-# or
+# or, when paru is unavailable
 yay -S pastebox-cli
 ```
+
+If neither AUR helper is installed, the command asks you to install `paru` or
+`yay` and run `pb update` again; this guidance is not treated as an error.
 
 An already current installation is left unchanged. Automatic RPM updates are
 not available on ARM systems.
