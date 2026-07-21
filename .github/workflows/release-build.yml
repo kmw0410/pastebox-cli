@@ -75,7 +75,7 @@ jobs:
         id: version
         shell: bash
         run: |
-          BASE_TAG="v$(date -u +'%y.%m.%d')"
+          BASE_TAG="v$(TZ=Asia/Seoul date +'%y.%m.%d')"
           TAG="$BASE_TAG"
           COUNT=0
 

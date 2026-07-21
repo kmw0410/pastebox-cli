@@ -36,6 +36,12 @@ func TestReleaseTagDependsOnQualityChecks(t *testing.T) {
 	if !strings.Contains(tagJob[1], "github.ref == 'refs/heads/main'") {
 		t.Fatal("release tag job is not restricted to main pushes")
 	}
+	if !strings.Contains(tagJob[1], `BASE_TAG="v$(TZ=Asia/Seoul date +'%y.%m.%d')"`) {
+		t.Fatal("release tag date is not generated in Asia/Seoul")
+	}
+	if strings.Contains(tagJob[1], "date -u") {
+		t.Fatal("release tag date must not be generated in UTC")
+	}
 }
 
 func readWorkflow(t *testing.T, path string) string {
