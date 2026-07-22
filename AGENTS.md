@@ -269,6 +269,7 @@ For upload and retrieval tests, use local `httptest` servers. Tests SHOULD cover
 - Push only when the user explicitly requests a push.
 - When the user requests a commit and the work fits one commit, create that commit without asking for another approval.
 - If the requested work requires two or more commits, tell the user before creating commits or pushing.
+- When the user requests multiple distinct tasks and authorizes pushing them, finish and commit each task separately, run the final combined validation, and then push all resulting commits together once. Do not push each task immediately after its commit unless the user explicitly requests per-task pushes.
 - Stage only files that belong to the requested commit.
 - `WORK.md` MUST NOT be staged or committed.
 - Exclude `AGENTS.md` from ordinary feature or fix commits unless the user explicitly requests its inclusion.
@@ -341,6 +342,20 @@ Each retained note MUST identify the problematic area, cause, fix, and preventio
 - Cause: Adding quality checks replaced the existing metadata exclusions with a Markdown-only filter, so workflow, license, and ignore-file commits started release builds.
 - Fix: Exclude Markdown, `.gitignore`, workflow files, and license files for both events; additionally exclude test-only Go changes from pushes while retaining pull-request validation for them.
 - Prevention: Extend `workflow_test.go` whenever release path filters change and verify the intended push and pull-request exclusions independently.
+
+### New security features must fail closed against older servers
+
+- Problematic area: `upload.go` and `clone.go` handling of prompted custom passwords.
+- Cause: The CLI initially treated any successful upload response as proof that `new-paste-password` was understood, but an older server could ignore that header and create an unprotected paste.
+- Fix: Require an explicit positive response before reporting success:
+
+  ```go
+  if opts.newPassword != "" && (result.PasswordProtected == nil || !*result.PasswordProtected) {
+      return uploadResponse{}, nil, fmt.Errorf("server did not confirm password protection")
+  }
+  ```
+
+- Prevention: For newly added security-sensitive request fields, test responses from both supporting and older servers and reject missing capability confirmation.
 
 ## 15. Final Reporting
 
