@@ -165,7 +165,7 @@ and response-header waits are bounded without imposing a total upload timeout.
    pb delete AbC123
    ```
 
-7. **Manage a paste**: Inspect metadata, change its label or retention policy, enable or disable password protection, or delete it with the private manage URL. A code-only target prompts for the manage token.
+7. **Manage a paste**: Inspect metadata, change its label or retention policy, or enable or disable password protection with the private manage URL. A code-only target prompts for the manage token. Use `pb delete` to delete a paste.
 
    ```bash
    pb manage show 'https://paste.example.com/AbC123?manage=MANAGE_TOKEN'
@@ -173,7 +173,6 @@ and response-header waits are bounded without imposing a total upload timeout.
    pb manage policy AbC123 permanent
    pb manage password enable AbC123
    pb manage password disable AbC123
-   pb manage delete AbC123
    ```
 
 ### Release packages

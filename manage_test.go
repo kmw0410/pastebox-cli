@@ -79,22 +79,16 @@ func TestRunManagePatchActions(t *testing.T) {
 	}
 }
 
-func TestRunManageDeletePromptsForToken(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodDelete || r.Header.Get("paste-manage-token") != "manage-secret" {
-			t.Errorf("unexpected request: %s %s headers=%v", r.Method, r.URL.String(), r.Header)
-		}
-		io.WriteString(w, `{"deleted":true}`)
-	}))
-	defer server.Close()
-
-	app, stdout, stderr := testApplication(serverConfig(t, server.URL), strings.NewReader(""))
-	app.readPassword = testPasswordReader("manage-secret")
-	if code := app.run([]string{"manage", "delete", "AbC123"}); code != 0 {
+func TestRunManageDeleteDirectsToDeleteCommand(t *testing.T) {
+	app, stdout, stderr := testApplication("/missing/config.json", strings.NewReader(""))
+	if code := app.run([]string{"manage", "delete", "AbC123"}); code != 2 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
-	if stdout.String() != "deleted: AbC123\n" {
+	if stdout.Len() != 0 {
 		t.Fatalf("stdout = %q", stdout.String())
+	}
+	if got := stderr.String(); got != "pb manage delete has been removed; use pb delete to delete a paste\n" {
+		t.Fatalf("stderr = %q", got)
 	}
 }
 

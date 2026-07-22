@@ -189,10 +189,9 @@ pb manage label AbC123 '운영 로그'
 pb manage policy AbC123 12h
 pb manage password enable AbC123
 pb manage password disable AbC123
-pb manage delete AbC123
 ```
 
-비밀번호 활성화는 새 비밀번호와 확인값을 입력받고, 비밀번호 해제는 현재 Paste 비밀번호를 입력받습니다. 관리 토큰과 비밀번호는 요청 헤더 또는 JSON 본문으로만 전송되며 진단 출력에서 제외됩니다.
+비밀번호 활성화는 새 비밀번호와 확인값을 입력받고, 비밀번호 해제는 현재 Paste 비밀번호를 입력받습니다. Paste 삭제에는 `pb delete`를 사용합니다. 관리 토큰과 비밀번호는 요청 헤더 또는 JSON 본문으로만 전송되며 진단 출력에서 제외됩니다.
 
 ## 업데이트
 

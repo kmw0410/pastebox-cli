@@ -164,7 +164,7 @@ pb version
    pb delete AbC123
    ```
 
-7. **Paste 관리**: 비공개 관리 URL을 사용해 메타데이터를 확인하고 라벨·보존 정책 변경, 비밀번호 보호 활성화·해제 또는 삭제를 할 수 있습니다. 코드만 전달하면 관리 토큰을 프롬프트로 입력받습니다.
+7. **Paste 관리**: 비공개 관리 URL을 사용해 메타데이터를 확인하고 라벨·보존 정책 변경 또는 비밀번호 보호 활성화·해제를 할 수 있습니다. 코드만 전달하면 관리 토큰을 프롬프트로 입력받습니다. Paste 삭제에는 `pb delete`를 사용합니다.
 
    ```bash
    pb manage show 'https://paste.example.com/AbC123?manage=MANAGE_TOKEN'
@@ -172,7 +172,6 @@ pb version
    pb manage policy AbC123 permanent
    pb manage password enable AbC123
    pb manage password disable AbC123
-   pb manage delete AbC123
    ```
 
 ### 릴리스 패키지

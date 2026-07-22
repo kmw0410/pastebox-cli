@@ -72,7 +72,6 @@ const manageUsageText = `Usage:
   pb manage policy <code|manage-url> <temporary|permanent|once|duration>
   pb manage password enable <code|manage-url>
   pb manage password disable <code|manage-url>
-  pb manage delete <code|manage-url>
 `
 
 const configUsageText = `Usage:

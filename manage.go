@@ -37,8 +37,12 @@ func (a application) runManage(args []string) int {
 		fmt.Fprint(a.stdout, manageUsageText)
 		return 0
 	}
+	if len(args) >= 1 && args[0] == "delete" {
+		fmt.Fprintln(a.stderr, "pb manage delete has been removed; use pb delete to delete a paste")
+		return 2
+	}
 
-	command, target, action, deleting, err := parseManageArguments(args)
+	command, target, action, err := parseManageArguments(args)
 	if err != nil {
 		fmt.Fprint(a.stderr, manageUsageText)
 		return 2
@@ -76,18 +80,6 @@ func (a application) runManage(args []string) int {
 		}
 	}
 
-	if deleting {
-		if err := deleteManagedPaste(a.requestContext(), a.httpClient, cfg, reference.code, reference.token); err != nil {
-			fmt.Fprintln(a.stderr, err)
-			return 1
-		}
-		if _, err := fmt.Fprintf(a.stdout, "deleted: %s\n", reference.code); err != nil {
-			fmt.Fprintf(a.stderr, "write output: %v\n", err)
-			return 1
-		}
-		return 0
-	}
-
 	method := http.MethodPatch
 	var payload *manageAction
 	if command == "show" {
@@ -107,22 +99,20 @@ func (a application) runManage(args []string) int {
 	return 0
 }
 
-func parseManageArguments(args []string) (command string, target string, action manageAction, deleting bool, err error) {
+func parseManageArguments(args []string) (command string, target string, action manageAction, err error) {
 	switch {
 	case len(args) == 2 && args[0] == "show":
-		return "show", args[1], manageAction{}, false, nil
+		return "show", args[1], manageAction{}, nil
 	case len(args) == 3 && args[0] == "label":
-		return "label", args[1], manageAction{Action: "set_label", Label: args[2]}, false, nil
+		return "label", args[1], manageAction{Action: "set_label", Label: args[2]}, nil
 	case len(args) == 3 && args[0] == "policy":
-		return "policy", args[1], manageAction{Action: "set_policy", DataPolicy: args[2]}, false, nil
+		return "policy", args[1], manageAction{Action: "set_policy", DataPolicy: args[2]}, nil
 	case len(args) == 3 && args[0] == "password" && args[1] == "enable":
-		return "password-enable", args[2], manageAction{Action: "enable_password"}, false, nil
+		return "password-enable", args[2], manageAction{Action: "enable_password"}, nil
 	case len(args) == 3 && args[0] == "password" && args[1] == "disable":
-		return "password-disable", args[2], manageAction{Action: "disable_password"}, false, nil
-	case len(args) == 2 && args[0] == "delete":
-		return "delete", args[1], manageAction{}, true, nil
+		return "password-disable", args[2], manageAction{Action: "disable_password"}, nil
 	default:
-		return "", "", manageAction{}, false, fmt.Errorf("invalid manage arguments")
+		return "", "", manageAction{}, fmt.Errorf("invalid manage arguments")
 	}
 }
 
@@ -162,34 +152,6 @@ func requestManagedPaste(ctx context.Context, client *http.Client, cfg config, m
 		return managedPaste{}, fmt.Errorf("invalid manage response from server")
 	}
 	return result, nil
-}
-
-func deleteManagedPaste(ctx context.Context, client *http.Client, cfg config, code, token string) error {
-	endpoint := strings.TrimRight(cfg.ServerURL, "/") + "/api/v1/pastes/" + url.PathEscape(code)
-	req, err := http.NewRequestWithContext(ctx, http.MethodDelete, endpoint, nil)
-	if err != nil {
-		return fmt.Errorf("create manage delete request: %w", err)
-	}
-	req.Header.Set("paste-manage-token", token)
-	resp, err := doManagedRequest(client, cfg.ServerURL, token, req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	responseBody, err := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
-	if err != nil {
-		return fmt.Errorf("read manage delete response: %w", err)
-	}
-	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return responseError("manage delete failed", resp, responseBody)
-	}
-	var result struct {
-		Deleted bool `json:"deleted"`
-	}
-	if err := json.Unmarshal(responseBody, &result); err != nil || !result.Deleted {
-		return fmt.Errorf("invalid manage delete response from server")
-	}
-	return nil
 }
 
 func doManagedRequest(client *http.Client, serverURL, token string, req *http.Request) (*http.Response, error) {

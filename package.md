@@ -189,10 +189,9 @@ pb manage label AbC123 'production log'
 pb manage policy AbC123 12h
 pb manage password enable AbC123
 pb manage password disable AbC123
-pb manage delete AbC123
 ```
 
-Password enable prompts for a new password and confirmation. Password disable prompts for the current paste password. Manage and password secrets are sent only in request headers or JSON bodies and are omitted from diagnostics.
+Password enable prompts for a new password and confirmation. Password disable prompts for the current paste password. Use `pb delete` to delete a paste. Manage and password secrets are sent only in request headers or JSON bodies and are omitted from diagnostics.
 
 ## Update
 
