@@ -20,7 +20,7 @@ func TestRunClone(t *testing.T) {
 			t.Errorf("unexpected clone headers: %v", r.Header)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"url":"https://public.example/cloned","expires":"soon","manage":"manage-url","delete":"delete-url"}`)
+		io.WriteString(w, `{"url":"https://public.example/cloned","expires":"soon","manage":"manage-url","delete":"delete-url","password_protected":true}`)
 	}))
 	defer server.Close()
 
@@ -103,5 +103,21 @@ func TestRunCloneRejectsUnsafeRedirectWithoutSendingPassword(t *testing.T) {
 	}
 	if strings.Contains(stderr.String(), "source-secret") {
 		t.Fatalf("stderr exposed password: %q", stderr.String())
+	}
+}
+
+func TestRunCloneRejectsServerWithoutPasswordConfirmation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, `{"url":"https://public.example/unprotected"}`)
+	}))
+	defer server.Close()
+
+	app, _, stderr := testApplication(serverConfig(t, server.URL), strings.NewReader(""))
+	app.readPassword = testPasswordReader("clone-secret", "clone-secret")
+	if code := app.run([]string{"clone", "--password", "source"}); code != 1 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "did not confirm password protection") {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }

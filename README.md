@@ -138,7 +138,7 @@ and response-header waits are bounded without imposing a total upload timeout.
    pb --expires 12h build.log
    ```
 
-3. **Protected paste retrieval**: Prompt for a hidden password and send it through the `paste-password` header. Passwords do not appear in shell history or process arguments.
+3. **Protected paste retrieval**: Prompt for a hidden password and send it through the `paste-password` header. Passwords do not appear in shell history or process arguments. Prompted password creation requires a server version that confirms `password_protected` in upload and clone responses; the CLI fails closed when that confirmation is unavailable.
 
    ```bash
    pb show --password AbC123

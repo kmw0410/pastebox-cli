@@ -70,6 +70,9 @@ func clonePaste(ctx context.Context, client *http.Client, cfg config, target, so
 	if result.URL == "" {
 		return uploadResponse{}, nil, fmt.Errorf("invalid clone response from server: missing url")
 	}
+	if opts.newPassword != "" && (result.PasswordProtected == nil || !*result.PasswordProtected) {
+		return uploadResponse{}, nil, fmt.Errorf("server did not confirm password protection; update the Pastebox server before using --password")
+	}
 	return result, raw, nil
 }
 

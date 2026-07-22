@@ -51,7 +51,7 @@ func TestRunUploadStdin(t *testing.T) {
 			t.Errorf("unexpected upload headers: %v", r.Header)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"url":"https://public.example/build-log","expires":"soon","manage":"manage-url","delete":"delete-url"}`)
+		io.WriteString(w, `{"url":"https://public.example/build-log","expires":"soon","manage":"manage-url","delete":"delete-url","password_protected":true}`)
 	}))
 	defer server.Close()
 
@@ -154,5 +154,21 @@ func TestRunUploadRejectsUnsafeRedirectWithoutSendingPassword(t *testing.T) {
 	}
 	if strings.Contains(stderr.String(), "custom-secret") {
 		t.Fatalf("stderr exposed password: %q", stderr.String())
+	}
+}
+
+func TestRunUploadRejectsServerWithoutPasswordConfirmation(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, `{"url":"https://public.example/unprotected"}`)
+	}))
+	defer server.Close()
+
+	app, _, stderr := testApplication(serverConfig(t, server.URL), strings.NewReader("body"))
+	app.readPassword = testPasswordReader("custom-secret", "custom-secret")
+	if code := app.run([]string{"--password"}); code != 1 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stderr.String(), "did not confirm password protection") {
+		t.Fatalf("stderr = %q", stderr.String())
 	}
 }

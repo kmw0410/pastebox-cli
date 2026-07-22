@@ -25,11 +25,12 @@ type uploadOptions struct {
 }
 
 type uploadResponse struct {
-	URL      string `json:"url"`
-	Expires  string `json:"expires,omitempty"`
-	Password string `json:"password,omitempty"`
-	Manage   string `json:"manage,omitempty"`
-	Delete   string `json:"delete,omitempty"`
+	URL               string `json:"url"`
+	Expires           string `json:"expires,omitempty"`
+	Password          string `json:"password,omitempty"`
+	Manage            string `json:"manage,omitempty"`
+	Delete            string `json:"delete,omitempty"`
+	PasswordProtected *bool  `json:"password_protected,omitempty"`
 }
 
 func (o uploadOptions) validate() error {
@@ -134,6 +135,9 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 	}
 	if strings.TrimSpace(result.URL) == "" {
 		return uploadResponse{}, nil, fmt.Errorf("invalid upload response from server: missing url")
+	}
+	if opts.newPassword != "" && (result.PasswordProtected == nil || !*result.PasswordProtected) {
+		return uploadResponse{}, nil, fmt.Errorf("server did not confirm password protection; update the Pastebox server before using --password")
 	}
 	return result, raw, nil
 }

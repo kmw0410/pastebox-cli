@@ -137,7 +137,7 @@ pb version
    pb --expires 12h build.log
    ```
 
-3. **비밀번호 보호 Paste 조회**: 비밀번호를 화면에 표시하지 않는 프롬프트로 입력받아 `paste-password` 헤더로 전달합니다. 비밀번호는 셸 기록이나 프로세스 인자에 남지 않습니다.
+3. **비밀번호 보호 Paste 조회**: 비밀번호를 화면에 표시하지 않는 프롬프트로 입력받아 `paste-password` 헤더로 전달합니다. 비밀번호는 셸 기록이나 프로세스 인자에 남지 않습니다. 프롬프트 비밀번호 생성에는 업로드·복제 응답의 `password_protected`를 확인해 주는 서버 버전이 필요하며, 확인할 수 없으면 CLI는 안전하게 실패합니다.
 
    ```bash
    pb show --password AbC123
