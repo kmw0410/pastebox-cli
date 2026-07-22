@@ -99,7 +99,7 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 		req.Header.Set("usepassword", "true")
 	}
 	if opts.newPassword != "" {
-		req.Header.Set("new-paste-password", opts.newPassword)
+		req.Header.Set("password", opts.newPassword)
 	}
 	if opts.code != "" {
 		req.Header.Set("code", opts.code)
@@ -110,7 +110,7 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 
 	sensitiveHeaders := make(http.Header)
 	if opts.newPassword != "" {
-		sensitiveHeaders.Set("new-paste-password", opts.newPassword)
+		sensitiveHeaders.Set("password", opts.newPassword)
 	}
 	redirectClient, err := secureHTTPClient(client, cfg.ServerURL, sensitiveHeaders)
 	if err != nil {

@@ -16,7 +16,7 @@ func TestRunClone(t *testing.T) {
 		if r.Header.Get("paste-password") != "source-secret" {
 			t.Errorf("paste-password = %q", r.Header.Get("paste-password"))
 		}
-		if r.Header.Get("data-policy") != "12h" || r.Header.Get("new-paste-password") != "clone-secret" || r.Header.Get("usepassword") != "" || r.Header.Get("code") != "cloned" {
+		if r.Header.Get("data-policy") != "12h" || r.Header.Get("password") != "clone-secret" || r.Header.Get("usepassword") != "" || r.Header.Get("code") != "cloned" {
 			t.Errorf("unexpected clone headers: %v", r.Header)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -54,7 +54,7 @@ func TestRunCloneQuiet(t *testing.T) {
 
 func TestRunCloneEmptyPasswordPromptRequestsRandomPassword(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("usepassword") != "true" || r.Header.Get("new-paste-password") != "" {
+		if r.Header.Get("usepassword") != "true" || r.Header.Get("password") != "" {
 			t.Errorf("unexpected password headers: %v", r.Header)
 		}
 		io.WriteString(w, `{"url":"https://public.example/random-clone","password":"generated-secret","password_protected":true}`)
@@ -102,7 +102,7 @@ func TestRunCloneServerErrorDoesNotExposeSourcePassword(t *testing.T) {
 func TestRunCloneRejectsUnsafeRedirectWithoutSendingPassword(t *testing.T) {
 	receivedPassword := false
 	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedPassword = r.Header.Get("paste-password") != "" || r.Header.Get("new-paste-password") != ""
+		receivedPassword = r.Header.Get("paste-password") != "" || r.Header.Get("password") != ""
 		io.WriteString(w, `{"url":"https://public.example/cloned"}`)
 	}))
 	defer destination.Close()

@@ -47,7 +47,7 @@ func TestRunUploadStdin(t *testing.T) {
 		if got := r.Header.Get("Content-Type"); got != "text/plain; charset=utf-8" {
 			t.Errorf("Content-Type = %q", got)
 		}
-		if r.Header.Get("data-policy") != "12h" || r.Header.Get("new-paste-password") != "custom-secret" || r.Header.Get("usepassword") != "" || r.Header.Get("code") != "build-log" || r.Header.Get("label") != "Build log" {
+		if r.Header.Get("data-policy") != "12h" || r.Header.Get("password") != "custom-secret" || r.Header.Get("usepassword") != "" || r.Header.Get("code") != "build-log" || r.Header.Get("label") != "Build log" {
 			t.Errorf("unexpected upload headers: %v", r.Header)
 		}
 		w.Header().Set("Content-Type", "application/json")
@@ -107,7 +107,7 @@ func TestRunUploadFileMultipart(t *testing.T) {
 
 func TestRunUploadEmptyPasswordPromptRequestsRandomPassword(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("usepassword") != "true" || r.Header.Get("new-paste-password") != "" {
+		if r.Header.Get("usepassword") != "true" || r.Header.Get("password") != "" {
 			t.Errorf("unexpected password headers: %v", r.Header)
 		}
 		io.WriteString(w, `{"url":"https://public.example/random","password":"generated-secret","password_protected":true}`)
@@ -153,7 +153,7 @@ func TestRunUploadServerError(t *testing.T) {
 func TestRunUploadRejectsUnsafeRedirectWithoutSendingPassword(t *testing.T) {
 	receivedPassword := false
 	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedPassword = r.Header.Get("new-paste-password") != ""
+		receivedPassword = r.Header.Get("password") != ""
 		io.WriteString(w, `{"url":"https://public.example/paste"}`)
 	}))
 	defer destination.Close()
