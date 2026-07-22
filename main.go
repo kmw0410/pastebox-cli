@@ -281,7 +281,7 @@ func (a application) runUpload(args []string) int {
 		return 2
 	}
 	if *promptPassword {
-		opts.newPassword, err = a.promptNewPassword()
+		opts.newPassword, opts.usePassword, err = a.promptPasswordProtection()
 		if err != nil {
 			fmt.Fprintf(a.stderr, "cannot read password: %v\n", err)
 			return 2
@@ -381,7 +381,7 @@ func (a application) runClone(args []string) int {
 		}
 	}
 	if *promptPassword {
-		opts.newPassword, err = a.promptNewPassword()
+		opts.newPassword, opts.usePassword, err = a.promptPasswordProtection()
 		if err != nil {
 			fmt.Fprintf(a.stderr, "cannot read new password: %v\n", err)
 			return 2

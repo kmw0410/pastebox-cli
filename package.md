@@ -124,7 +124,7 @@ pb --code deploy-log --label "Production deployment" server.log
 
 `--permanent`, `--once`, and `--expires` cannot be combined.
 
-`--password` reads and confirms an 8-128 character password from the controlling terminal without echoing it. This also works when paste content is streamed through standard input. The CLI requires the server response to confirm `password_protected`; it fails instead of silently accepting an unprotected paste from an older server.
+`--password` opens a hidden prompt on the controlling terminal. Press Enter without typing a value to request a random server-generated password, or enter and confirm an 8-128 character custom password. This also works when paste content is streamed through standard input. For custom passwords, the CLI requires the server response to confirm `password_protected`; it fails instead of silently accepting an unprotected paste from an older server.
 
 The normal successful output contains the public URL and, when returned by the server, its expiration, generated password, private manage URL, and delete URL:
 

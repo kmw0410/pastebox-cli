@@ -65,6 +65,30 @@ func (a application) promptNewPassword() (string, error) {
 	return password, nil
 }
 
+func (a application) promptPasswordProtection() (string, bool, error) {
+	if a.readPassword == nil {
+		return "", false, errors.New("interactive terminal is required")
+	}
+	password, err := a.readPassword("New paste password (leave blank for random): ")
+	if err != nil {
+		return "", false, err
+	}
+	if password == "" {
+		return "", true, nil
+	}
+	if !validPromptedPassword(password) {
+		return "", false, errors.New("password must contain 8-128 characters without control characters")
+	}
+	confirmation, err := a.promptExistingPassword("Confirm new paste password: ")
+	if err != nil {
+		return "", false, err
+	}
+	if password != confirmation {
+		return "", false, errors.New("passwords do not match")
+	}
+	return password, false, nil
+}
+
 func validPromptedPassword(password string) bool {
 	if !utf8.ValidString(password) {
 		return false

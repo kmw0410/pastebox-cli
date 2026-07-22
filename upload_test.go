@@ -105,6 +105,25 @@ func TestRunUploadFileMultipart(t *testing.T) {
 	}
 }
 
+func TestRunUploadEmptyPasswordPromptRequestsRandomPassword(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("usepassword") != "true" || r.Header.Get("new-paste-password") != "" {
+			t.Errorf("unexpected password headers: %v", r.Header)
+		}
+		io.WriteString(w, `{"url":"https://public.example/random","password":"generated-secret","password_protected":true}`)
+	}))
+	defer server.Close()
+
+	app, stdout, stderr := testApplication(serverConfig(t, server.URL), strings.NewReader("body"))
+	app.readPassword = testPasswordReader("")
+	if code := app.run([]string{"--password"}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "password: generated-secret") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunUploadArgumentErrors(t *testing.T) {
 	app, _, stderr := testApplication("unused", strings.NewReader("body"))
 	if code := app.run([]string{"--permanent", "--once"}); code != 2 {

@@ -52,6 +52,25 @@ func TestRunCloneQuiet(t *testing.T) {
 	}
 }
 
+func TestRunCloneEmptyPasswordPromptRequestsRandomPassword(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("usepassword") != "true" || r.Header.Get("new-paste-password") != "" {
+			t.Errorf("unexpected password headers: %v", r.Header)
+		}
+		io.WriteString(w, `{"url":"https://public.example/random-clone","password":"generated-secret","password_protected":true}`)
+	}))
+	defer server.Close()
+
+	app, stdout, stderr := testApplication(serverConfig(t, server.URL), strings.NewReader(""))
+	app.readPassword = testPasswordReader("")
+	if code := app.run([]string{"clone", "--password", "source"}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if !strings.Contains(stdout.String(), "password: generated-secret") {
+		t.Fatalf("stdout = %q", stdout.String())
+	}
+}
+
 func TestRunCloneArgumentErrors(t *testing.T) {
 	app, _, stderr := testApplication("unused", strings.NewReader(""))
 	if code := app.run([]string{"clone", "--permanent", "--once", "source"}); code != 2 {

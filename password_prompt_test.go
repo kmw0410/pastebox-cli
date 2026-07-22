@@ -31,3 +31,25 @@ func TestPromptNewPasswordRejectsShortPassword(t *testing.T) {
 		t.Fatalf("error = %v", err)
 	}
 }
+
+func TestPromptPasswordProtectionUsesRandomPasswordForEmptyInput(t *testing.T) {
+	app := application{readPassword: testPasswordReader("")}
+	password, random, err := app.promptPasswordProtection()
+	if err != nil {
+		t.Fatalf("promptPasswordProtection failed: %v", err)
+	}
+	if password != "" || !random {
+		t.Fatalf("password = %q, random = %v", password, random)
+	}
+}
+
+func TestPromptPasswordProtectionConfirmsCustomPassword(t *testing.T) {
+	app := application{readPassword: testPasswordReader("custom-secret", "custom-secret")}
+	password, random, err := app.promptPasswordProtection()
+	if err != nil {
+		t.Fatalf("promptPasswordProtection failed: %v", err)
+	}
+	if password != "custom-secret" || random {
+		t.Fatalf("password = %q, random = %v", password, random)
+	}
+}
