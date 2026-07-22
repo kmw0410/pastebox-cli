@@ -105,6 +105,7 @@ pb [options] [file|-]
 pb show [--password] <code|url>
 pb clone [options] <code|url>
 pb delete <code|delete-url>
+pb manage <command> [arguments]
 pb config show
 pb config set server <URL>
 pb config validate
@@ -112,7 +113,7 @@ pb update
 pb version
 ```
 
-Run `pb show --help`, `pb clone --help`, `pb delete --help`, `pb config --help`, or `pb update --help` for
+Run `pb show --help`, `pb clone --help`, `pb delete --help`, `pb manage --help`, `pb config --help`, or `pb update --help` for
 command-specific usage. On Arch Linux family systems, `pb update` checks the
 latest release and updates the AUR package with an installed `paru` or `yay`.
 On Debian/Ubuntu and supported RHEL/Fedora systems, it
@@ -162,6 +163,17 @@ and response-header waits are bounded without imposing a total upload timeout.
    ```bash
    pb delete 'https://paste.example.com/AbC123?delete=DELETE_TOKEN'
    pb delete AbC123
+   ```
+
+7. **Manage a paste**: Inspect metadata, change its label or retention policy, enable or disable password protection, or delete it with the private manage URL. A code-only target prompts for the manage token.
+
+   ```bash
+   pb manage show 'https://paste.example.com/AbC123?manage=MANAGE_TOKEN'
+   pb manage label AbC123 'production log'
+   pb manage policy AbC123 permanent
+   pb manage password enable AbC123
+   pb manage password disable AbC123
+   pb manage delete AbC123
    ```
 
 ### Release packages

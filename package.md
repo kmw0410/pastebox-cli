@@ -181,6 +181,19 @@ pb delete AbC123
 
 The CLI sends the token to the versioned Pastebox API in the `paste-delete-token` header and does not include it in diagnostic output. Passing only the code avoids putting the token in shell history.
 
+Use the private manage URL, or a code followed by a hidden manage-token prompt, to inspect and update a paste:
+
+```bash
+pb manage show 'https://paste.example.com/AbC123?manage=MANAGE_TOKEN'
+pb manage label AbC123 'production log'
+pb manage policy AbC123 12h
+pb manage password enable AbC123
+pb manage password disable AbC123
+pb manage delete AbC123
+```
+
+Password enable prompts for a new password and confirmation. Password disable prompts for the current paste password. Manage and password secrets are sent only in request headers or JSON bodies and are omitted from diagnostics.
+
 ## Update
 
 Run the explicit update command to install the latest supported package:
@@ -220,6 +233,7 @@ Show command-specific usage without reading the config file or contacting the se
 pb show --help
 pb clone --help
 pb delete --help
+pb manage --help
 pb config --help
 pb update --help
 ```

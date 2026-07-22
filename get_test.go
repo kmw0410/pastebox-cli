@@ -222,6 +222,8 @@ func TestRunCommandHelp(t *testing.T) {
 		{name: "clone short", args: []string{"clone", "-h"}, want: "pb clone [options] <code|url>"},
 		{name: "delete long", args: []string{"delete", "--help"}, want: "pb delete <code|delete-url>"},
 		{name: "delete short", args: []string{"delete", "-h"}, want: "pb delete <code|delete-url>"},
+		{name: "manage long", args: []string{"manage", "--help"}, want: "pb manage password enable <code|manage-url>"},
+		{name: "manage short", args: []string{"manage", "-h"}, want: "pb manage password enable <code|manage-url>"},
 		{name: "config long", args: []string{"config", "--help"}, want: "pb config set server <URL>"},
 		{name: "config short", args: []string{"config", "-h"}, want: "pb config set server <URL>"},
 	}

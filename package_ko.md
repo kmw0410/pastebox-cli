@@ -181,6 +181,19 @@ pb delete AbC123
 
 CLI는 버전 지정 Pastebox API의 `paste-delete-token` 헤더로 토큰을 전달하며 진단 출력에는 토큰을 포함하지 않습니다. 코드만 전달하면 토큰이 셸 기록에 남는 것도 피할 수 있습니다.
 
+비공개 관리 URL을 사용하거나 코드만 전달한 뒤 숨김 관리 토큰 프롬프트를 거쳐 Paste를 확인하고 변경할 수 있습니다.
+
+```bash
+pb manage show 'https://paste.example.com/AbC123?manage=MANAGE_TOKEN'
+pb manage label AbC123 '운영 로그'
+pb manage policy AbC123 12h
+pb manage password enable AbC123
+pb manage password disable AbC123
+pb manage delete AbC123
+```
+
+비밀번호 활성화는 새 비밀번호와 확인값을 입력받고, 비밀번호 해제는 현재 Paste 비밀번호를 입력받습니다. 관리 토큰과 비밀번호는 요청 헤더 또는 JSON 본문으로만 전송되며 진단 출력에서 제외됩니다.
+
 ## 업데이트
 
 지원되는 최신 패키지를 설치하려면 업데이트 명령을 직접 실행합니다.
@@ -219,6 +232,7 @@ yay -S pastebox-cli
 pb show --help
 pb clone --help
 pb delete --help
+pb manage --help
 pb config --help
 pb update --help
 ```

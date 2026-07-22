@@ -23,6 +23,7 @@ const usageText = `Usage:
   pb show [--password] <code|url>
   pb clone [options] <code|url>
   pb delete <code|delete-url>
+  pb manage <command> [arguments]
   pb config show
   pb config set server <URL>
   pb config validate
@@ -63,6 +64,15 @@ Clone options:
 
 const deleteUsageText = `Usage:
   pb delete <code|delete-url>
+`
+
+const manageUsageText = `Usage:
+  pb manage show <code|manage-url>
+  pb manage label <code|manage-url> <label>
+  pb manage policy <code|manage-url> <temporary|permanent|once|duration>
+  pb manage password enable <code|manage-url>
+  pb manage password disable <code|manage-url>
+  pb manage delete <code|manage-url>
 `
 
 const configUsageText = `Usage:
@@ -157,6 +167,8 @@ func (a application) run(args []string) int {
 			return a.runClone(args[1:])
 		case "delete":
 			return a.runDelete(args[1:])
+		case "manage":
+			return a.runManage(args[1:])
 		case "update":
 			return a.runUpdate(args[1:])
 		}
