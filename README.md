@@ -103,6 +103,7 @@ expected for that repository.
 ```text
 pb [options] [file|-]
 pb show [--password PASSWORD] <code|url>
+pb clone [options] <code|url>
 pb config show
 pb config set server <URL>
 pb config validate
@@ -110,7 +111,7 @@ pb update
 pb version
 ```
 
-Run `pb show --help`, `pb config --help`, or `pb update --help` for
+Run `pb show --help`, `pb clone --help`, `pb config --help`, or `pb update --help` for
 command-specific usage. On Arch Linux family systems, `pb update` checks the
 latest release and updates the AUR package with an installed `paru` or `yay`.
 On Debian/Ubuntu and supported RHEL/Fedora systems, it
@@ -146,6 +147,13 @@ and response-header waits are bounded without imposing a total upload timeout.
    ```bash
    pb --quiet server.log
    pb --json server.log
+   ```
+
+5. **Clone a paste**: Copy an existing paste while choosing a new retention policy, code, or generated password. Protected source pastes accept their password separately.
+
+   ```bash
+   pb clone AbC123
+   pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
    ```
 
 ### Release packages

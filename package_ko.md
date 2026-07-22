@@ -161,6 +161,15 @@ pb show --password 'PASTE_PASSWORD' AbC123
 
 CLI는 `config.json`에 설정된 서버에 속한 전체 URL만 허용합니다. 이를 통해 다른 호스트로 Paste 비밀번호가 잘못 전송되는 일을 방지합니다.
 
+Paste를 복제하면서 보존 정책, 사용자 지정 코드 또는 생성 비밀번호 보호를 선택할 수 있습니다.
+
+```bash
+pb clone AbC123
+pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
+```
+
+원본 파일명과 라벨은 Pastebox 서버가 보존합니다. 복제 결과는 업로드와 동일하게 일반 출력, `--quiet`, `--json` 형식을 지원합니다.
+
 ## 업데이트
 
 지원되는 최신 패키지를 설치하려면 업데이트 명령을 직접 실행합니다.
@@ -197,6 +206,7 @@ yay -S pastebox-cli
 
 ```bash
 pb show --help
+pb clone --help
 pb config --help
 pb update --help
 ```

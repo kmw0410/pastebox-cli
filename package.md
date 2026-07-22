@@ -161,6 +161,15 @@ pb show --password 'PASTE_PASSWORD' AbC123
 
 The CLI accepts full paste URLs only when they belong to the server configured in `config.json`. This prevents accidentally sending a paste password to another host.
 
+Clone a paste while optionally changing its retention policy, custom code, or generated password protection:
+
+```bash
+pb clone AbC123
+pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
+```
+
+The source filename and label are preserved by the Pastebox server. Clone output uses the same normal, `--quiet`, and `--json` formats as uploads.
+
 ## Update
 
 Run the explicit update command to install the latest supported package:
@@ -198,6 +207,7 @@ Show command-specific usage without reading the config file or contacting the se
 
 ```bash
 pb show --help
+pb clone --help
 pb config --help
 pb update --help
 ```

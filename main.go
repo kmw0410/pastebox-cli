@@ -21,6 +21,7 @@ var (
 const usageText = `Usage:
   pb [options] [file|-]
   pb show [--password PASSWORD] <code|url>
+  pb clone [options] <code|url>
   pb config show
   pb config set server <URL>
   pb config validate
@@ -40,6 +41,20 @@ Upload options:
 
 const showUsageText = `Usage:
   pb show [--password PASSWORD] <code|url>
+`
+
+const cloneUsageText = `Usage:
+  pb clone [options] <code|url>
+
+Clone options:
+  --source-password PASSWORD  password for the source paste
+  --permanent                 keep the cloned paste permanently
+  --once                      delete after the first successful view
+  --expires VALUE             expire after a duration such as 30m, 12h, or 7d
+  --password                  generate password protection for the clone
+  --code VALUE                use a custom code for the clone
+  --quiet                     print only the cloned paste URL
+  --json                      print the JSON response
 `
 
 const configUsageText = `Usage:
@@ -126,6 +141,8 @@ func (a application) run(args []string) int {
 			return a.runConfig(args[1:])
 		case "show":
 			return a.runShow(args[1:])
+		case "clone":
+			return a.runClone(args[1:])
 		case "update":
 			return a.runUpdate(args[1:])
 		}
@@ -274,6 +291,53 @@ func (a application) runShow(args []string) int {
 	}
 	if err := getPaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), *password, a.stdout); err != nil {
 		fmt.Fprintln(a.stderr, err)
+		return 1
+	}
+	return 0
+}
+
+func (a application) runClone(args []string) int {
+	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
+		fmt.Fprint(a.stdout, cloneUsageText)
+		return 0
+	}
+
+	flags := flag.NewFlagSet("clone", flag.ContinueOnError)
+	flags.SetOutput(io.Discard)
+	var opts uploadOptions
+	sourcePassword := flags.String("source-password", "", "")
+	flags.BoolVar(&opts.permanent, "permanent", false, "")
+	flags.BoolVar(&opts.once, "once", false, "")
+	flags.StringVar(&opts.expires, "expires", "", "")
+	flags.BoolVar(&opts.usePassword, "password", false, "")
+	flags.StringVar(&opts.code, "code", "", "")
+	flags.BoolVar(&opts.quiet, "quiet", false, "")
+	flags.BoolVar(&opts.jsonOutput, "json", false, "")
+	if err := flags.Parse(args); err != nil {
+		fmt.Fprintf(a.stderr, "invalid arguments: %v\n", err)
+		return 2
+	}
+	if err := opts.validate(); err != nil {
+		fmt.Fprintf(a.stderr, "invalid arguments: %v\n", err)
+		return 2
+	}
+	if flags.NArg() != 1 || strings.TrimSpace(flags.Arg(0)) == "" {
+		fmt.Fprint(a.stderr, cloneUsageText)
+		return 2
+	}
+
+	cfg, err := loadConfig(a.configPath)
+	if err != nil {
+		fmt.Fprintln(a.stderr, err)
+		return 2
+	}
+	result, raw, err := clonePaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), *sourcePassword, opts)
+	if err != nil {
+		fmt.Fprintln(a.stderr, err)
+		return 1
+	}
+	if err := writeUploadOutput(a.stdout, result, raw, opts); err != nil {
+		fmt.Fprintf(a.stderr, "write output: %v\n", err)
 		return 1
 	}
 	return 0

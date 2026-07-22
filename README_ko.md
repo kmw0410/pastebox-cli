@@ -103,6 +103,7 @@ namcap pastebox-cli-*.pkg.tar.zst
 ```text
 pb [options] [file|-]
 pb show [--password PASSWORD] <code|url>
+pb clone [options] <code|url>
 pb config show
 pb config set server <URL>
 pb config validate
@@ -110,7 +111,7 @@ pb update
 pb version
 ```
 
-명령별 사용법은 `pb show --help`, `pb config --help` 또는 `pb update --help`로
+명령별 사용법은 `pb show --help`, `pb clone --help`, `pb config --help` 또는 `pb update --help`로
 확인할 수 있습니다. Arch Linux 계열에서 `pb update`는 최신 릴리스를 확인한
 뒤 설치된 `paru` 또는 `yay`로 AUR 패키지를 업데이트합니다. Debian/Ubuntu
 및 지원되는 RHEL/Fedora 계열에서는 최신 GitHub Release 패키지를 내려받아
@@ -145,6 +146,13 @@ pb version
    ```bash
    pb --quiet server.log
    pb --json server.log
+   ```
+
+5. **Paste 복제**: 기존 Paste를 복제하면서 새 보존 정책, 코드 또는 생성 비밀번호를 지정할 수 있습니다. 보호된 원본 Paste의 비밀번호는 별도로 전달합니다.
+
+   ```bash
+   pb clone AbC123
+   pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
    ```
 
 ### 릴리스 패키지
