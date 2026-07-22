@@ -45,7 +45,7 @@ func getPaste(ctx context.Context, client *http.Client, cfg config, target, pass
 		if readErr != nil {
 			return fmt.Errorf("read paste response: %w", readErr)
 		}
-		return responseError("get failed", resp, body)
+		return responseError("show failed", resp, body)
 	}
 	if _, err := io.Copy(output, resp.Body); err != nil {
 		return fmt.Errorf("write paste content: %w", err)

@@ -97,12 +97,12 @@ namcap pastebox-cli-*.pkg.tar.zst
 ### 어떻게 사용하나요?
 1. GitHub Release에서 맞는 패키지를 내려받거나 `go build`로 직접 빌드합니다.
 2. 저장소에 포함된 `config.json` 예시를 `~/.config/pastebox/config.json`으로 복사하거나, `pb`를 한 번 실행해 자동 생성합니다.
-3. `pb config set server <URL>`로 서버를 설정한 뒤 `pb`로 업로드하고 `pb get`으로 원문을 조회합니다.
+3. `pb config set server <URL>`로 서버를 설정한 뒤 `pb`로 업로드하고 `pb show`로 원문을 조회합니다.
 
 ### 명령어
 ```text
 pb [options] [file|-]
-pb get [--password PASSWORD] <code|url>
+pb show [--password PASSWORD] <code|url>
 pb config show
 pb config set server <URL>
 pb config validate
@@ -110,7 +110,7 @@ pb update
 pb version
 ```
 
-명령별 사용법은 `pb get --help`, `pb config --help` 또는 `pb update --help`로
+명령별 사용법은 `pb show --help`, `pb config --help` 또는 `pb update --help`로
 확인할 수 있습니다. Arch Linux 계열에서 `pb update`는 최신 릴리스를 확인한
 뒤 설치된 `paru` 또는 `yay`로 AUR 패키지를 업데이트합니다. Debian/Ubuntu
 및 지원되는 RHEL/Fedora 계열에서는 최신 GitHub Release 패키지를 내려받아
@@ -137,7 +137,7 @@ pb version
 3. **비밀번호 보호 Paste 조회**: 원문 조회 시 `paste-password` 헤더로 비밀번호를 전달합니다.
 
    ```bash
-   pb get --password 'PASTE_PASSWORD' AbC123
+   pb show --password 'PASTE_PASSWORD' AbC123
    ```
 
 4. **스크립트 친화적 출력**: 공개 URL만 출력하거나 JSON 형식으로 받을 수 있습니다.

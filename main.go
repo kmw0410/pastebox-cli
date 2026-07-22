@@ -20,7 +20,7 @@ var (
 
 const usageText = `Usage:
   pb [options] [file|-]
-  pb get [--password PASSWORD] <code|url>
+  pb show [--password PASSWORD] <code|url>
   pb config show
   pb config set server <URL>
   pb config validate
@@ -38,8 +38,8 @@ Upload options:
   --json            print the JSON response
 `
 
-const getUsageText = `Usage:
-  pb get [--password PASSWORD] <code|url>
+const showUsageText = `Usage:
+  pb show [--password PASSWORD] <code|url>
 `
 
 const configUsageText = `Usage:
@@ -124,8 +124,8 @@ func (a application) run(args []string) int {
 			return 0
 		case "config":
 			return a.runConfig(args[1:])
-		case "get":
-			return a.runGet(args[1:])
+		case "show":
+			return a.runShow(args[1:])
 		case "update":
 			return a.runUpdate(args[1:])
 		}
@@ -249,13 +249,13 @@ func (a application) runUpload(args []string) int {
 	return 0
 }
 
-func (a application) runGet(args []string) int {
+func (a application) runShow(args []string) int {
 	if len(args) == 1 && (args[0] == "--help" || args[0] == "-h") {
-		fmt.Fprint(a.stdout, getUsageText)
+		fmt.Fprint(a.stdout, showUsageText)
 		return 0
 	}
 
-	flags := flag.NewFlagSet("get", flag.ContinueOnError)
+	flags := flag.NewFlagSet("show", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	password := flags.String("password", "", "")
 	if err := flags.Parse(args); err != nil {
@@ -263,7 +263,7 @@ func (a application) runGet(args []string) int {
 		return 2
 	}
 	if flags.NArg() != 1 || strings.TrimSpace(flags.Arg(0)) == "" {
-		fmt.Fprint(a.stderr, getUsageText)
+		fmt.Fprint(a.stderr, showUsageText)
 		return 2
 	}
 

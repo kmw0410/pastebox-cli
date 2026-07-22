@@ -148,15 +148,15 @@ pb --json server.log
 Paste 코드 또는 공개 URL로 원문을 가져옵니다.
 
 ```bash
-pb get AbC123
-pb get https://paste.example.com/AbC123
-pb get AbC123 > restored.log
+pb show AbC123
+pb show https://paste.example.com/AbC123
+pb show AbC123 > restored.log
 ```
 
 비밀번호로 보호된 Paste는 다음과 같이 조회합니다.
 
 ```bash
-pb get --password 'PASTE_PASSWORD' AbC123
+pb show --password 'PASTE_PASSWORD' AbC123
 ```
 
 CLI는 `config.json`에 설정된 서버에 속한 전체 URL만 허용합니다. 이를 통해 다른 호스트로 Paste 비밀번호가 잘못 전송되는 일을 방지합니다.
@@ -196,7 +196,7 @@ yay -S pastebox-cli
 설정 파일을 읽거나 서버에 접속하지 않고 명령별 사용법을 확인할 수 있습니다.
 
 ```bash
-pb get --help
+pb show --help
 pb config --help
 pb update --help
 ```

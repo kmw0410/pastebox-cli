@@ -42,7 +42,7 @@ func TestRunRequestCancellation(t *testing.T) {
 		input io.Reader
 	}{
 		{name: "upload", input: strings.NewReader("paste body")},
-		{name: "get", args: []string{"get", "--password", "top-secret", "abc123"}, input: strings.NewReader("")},
+		{name: "show", args: []string{"show", "--password", "top-secret", "abc123"}, input: strings.NewReader("")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

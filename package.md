@@ -148,15 +148,15 @@ pb --json server.log
 Retrieve a paste by code or by a public URL:
 
 ```bash
-pb get AbC123
-pb get https://paste.example.com/AbC123
-pb get AbC123 > restored.log
+pb show AbC123
+pb show https://paste.example.com/AbC123
+pb show AbC123 > restored.log
 ```
 
 For a protected paste, provide its password through the request header with:
 
 ```bash
-pb get --password 'PASTE_PASSWORD' AbC123
+pb show --password 'PASTE_PASSWORD' AbC123
 ```
 
 The CLI accepts full paste URLs only when they belong to the server configured in `config.json`. This prevents accidentally sending a paste password to another host.
@@ -197,7 +197,7 @@ not available on ARM systems.
 Show command-specific usage without reading the config file or contacting the server:
 
 ```bash
-pb get --help
+pb show --help
 pb config --help
 pb update --help
 ```
