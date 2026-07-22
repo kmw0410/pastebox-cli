@@ -104,6 +104,7 @@ expected for that repository.
 pb [options] [file|-]
 pb show [--password] <code|url>
 pb clone [options] <code|url>
+pb delete <code|delete-url>
 pb config show
 pb config set server <URL>
 pb config validate
@@ -111,7 +112,7 @@ pb update
 pb version
 ```
 
-Run `pb show --help`, `pb clone --help`, `pb config --help`, or `pb update --help` for
+Run `pb show --help`, `pb clone --help`, `pb delete --help`, `pb config --help`, or `pb update --help` for
 command-specific usage. On Arch Linux family systems, `pb update` checks the
 latest release and updates the AUR package with an installed `paru` or `yay`.
 On Debian/Ubuntu and supported RHEL/Fedora systems, it
@@ -154,6 +155,13 @@ and response-header waits are bounded without imposing a total upload timeout.
    ```bash
    pb clone AbC123
    pb clone --source-password --expires 12h --password AbC123
+   ```
+
+6. **Delete a paste**: Pass the delete URL returned by an upload, or pass a code and enter its delete token at the hidden prompt.
+
+   ```bash
+   pb delete 'https://paste.example.com/AbC123?delete=DELETE_TOKEN'
+   pb delete AbC123
    ```
 
 ### Release packages

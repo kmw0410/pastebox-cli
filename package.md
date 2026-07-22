@@ -172,6 +172,15 @@ pb clone --source-password --expires 12h --password AbC123
 
 `--source-password` prompts once for the source password, while `--password` prompts twice to set and confirm the clone's new password. The source filename and label are preserved by the Pastebox server. Clone output uses the same normal, `--quiet`, and `--json` formats as uploads.
 
+Delete a paste by passing its private delete URL, or pass only the paste code and enter the delete token at the hidden terminal prompt:
+
+```bash
+pb delete 'https://paste.example.com/AbC123?delete=DELETE_TOKEN'
+pb delete AbC123
+```
+
+The CLI sends the token to the versioned Pastebox API in the `paste-delete-token` header and does not include it in diagnostic output. Passing only the code avoids putting the token in shell history.
+
 ## Update
 
 Run the explicit update command to install the latest supported package:
@@ -210,6 +219,7 @@ Show command-specific usage without reading the config file or contacting the se
 ```bash
 pb show --help
 pb clone --help
+pb delete --help
 pb config --help
 pb update --help
 ```

@@ -22,6 +22,7 @@ const usageText = `Usage:
   pb [options] [file|-]
   pb show [--password] <code|url>
   pb clone [options] <code|url>
+  pb delete <code|delete-url>
   pb config show
   pb config set server <URL>
   pb config validate
@@ -58,6 +59,10 @@ Clone options:
   --code VALUE                use a custom code for the clone
   --quiet                     print only the cloned paste URL
   --json                      print the JSON response
+`
+
+const deleteUsageText = `Usage:
+  pb delete <code|delete-url>
 `
 
 const configUsageText = `Usage:
@@ -150,6 +155,8 @@ func (a application) run(args []string) int {
 			return a.runShow(args[1:])
 		case "clone":
 			return a.runClone(args[1:])
+		case "delete":
+			return a.runDelete(args[1:])
 		case "update":
 			return a.runUpdate(args[1:])
 		}

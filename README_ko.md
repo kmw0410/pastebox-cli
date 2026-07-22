@@ -104,6 +104,7 @@ namcap pastebox-cli-*.pkg.tar.zst
 pb [options] [file|-]
 pb show [--password] <code|url>
 pb clone [options] <code|url>
+pb delete <code|delete-url>
 pb config show
 pb config set server <URL>
 pb config validate
@@ -111,7 +112,7 @@ pb update
 pb version
 ```
 
-명령별 사용법은 `pb show --help`, `pb clone --help`, `pb config --help` 또는 `pb update --help`로
+명령별 사용법은 `pb show --help`, `pb clone --help`, `pb delete --help`, `pb config --help` 또는 `pb update --help`로
 확인할 수 있습니다. Arch Linux 계열에서 `pb update`는 최신 릴리스를 확인한
 뒤 설치된 `paru` 또는 `yay`로 AUR 패키지를 업데이트합니다. Debian/Ubuntu
 및 지원되는 RHEL/Fedora 계열에서는 최신 GitHub Release 패키지를 내려받아
@@ -153,6 +154,13 @@ pb version
    ```bash
    pb clone AbC123
    pb clone --source-password --expires 12h --password AbC123
+   ```
+
+6. **Paste 삭제**: 업로드 결과의 삭제 URL을 전달하거나, Paste 코드만 전달한 뒤 숨김 프롬프트에 삭제 토큰을 입력할 수 있습니다.
+
+   ```bash
+   pb delete 'https://paste.example.com/AbC123?delete=DELETE_TOKEN'
+   pb delete AbC123
    ```
 
 ### 릴리스 패키지

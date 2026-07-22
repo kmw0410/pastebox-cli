@@ -220,6 +220,8 @@ func TestRunCommandHelp(t *testing.T) {
 		{name: "show short", args: []string{"show", "-h"}, want: "pb show [--password] <code|url>"},
 		{name: "clone long", args: []string{"clone", "--help"}, want: "pb clone [options] <code|url>"},
 		{name: "clone short", args: []string{"clone", "-h"}, want: "pb clone [options] <code|url>"},
+		{name: "delete long", args: []string{"delete", "--help"}, want: "pb delete <code|delete-url>"},
+		{name: "delete short", args: []string{"delete", "-h"}, want: "pb delete <code|delete-url>"},
 		{name: "config long", args: []string{"config", "--help"}, want: "pb config set server <URL>"},
 		{name: "config short", args: []string{"config", "-h"}, want: "pb config set server <URL>"},
 	}

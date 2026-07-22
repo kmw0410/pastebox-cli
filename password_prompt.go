@@ -30,6 +30,10 @@ func readTerminalPassword(output io.Writer, prompt string) (string, error) {
 }
 
 func (a application) promptExistingPassword(prompt string) (string, error) {
+	return a.promptSecret(prompt, "password must not be empty")
+}
+
+func (a application) promptSecret(prompt string, emptyMessage string) (string, error) {
 	if a.readPassword == nil {
 		return "", errors.New("interactive terminal is required")
 	}
@@ -38,7 +42,7 @@ func (a application) promptExistingPassword(prompt string) (string, error) {
 		return "", err
 	}
 	if password == "" {
-		return "", errors.New("password must not be empty")
+		return "", errors.New(emptyMessage)
 	}
 	return password, nil
 }

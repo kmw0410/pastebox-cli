@@ -172,6 +172,15 @@ pb clone --source-password --expires 12h --password AbC123
 
 `--source-password`는 원본 비밀번호를 한 번 입력받고, `--password`는 복제본의 새 비밀번호와 확인값을 두 번 입력받습니다. 원본 파일명과 라벨은 Pastebox 서버가 보존합니다. 복제 결과는 업로드와 동일하게 일반 출력, `--quiet`, `--json` 형식을 지원합니다.
 
+비공개 삭제 URL을 전달하거나 Paste 코드만 전달한 뒤 숨김 터미널 프롬프트에 삭제 토큰을 입력하여 Paste를 삭제할 수 있습니다.
+
+```bash
+pb delete 'https://paste.example.com/AbC123?delete=DELETE_TOKEN'
+pb delete AbC123
+```
+
+CLI는 버전 지정 Pastebox API의 `paste-delete-token` 헤더로 토큰을 전달하며 진단 출력에는 토큰을 포함하지 않습니다. 코드만 전달하면 토큰이 셸 기록에 남는 것도 피할 수 있습니다.
+
 ## 업데이트
 
 지원되는 최신 패키지를 설치하려면 업데이트 명령을 직접 실행합니다.
@@ -209,6 +218,7 @@ yay -S pastebox-cli
 ```bash
 pb show --help
 pb clone --help
+pb delete --help
 pb config --help
 pb update --help
 ```
