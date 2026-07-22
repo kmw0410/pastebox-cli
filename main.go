@@ -20,7 +20,7 @@ var (
 
 const usageText = `Usage:
   pb [options] [file|-]
-  pb show [--password PASSWORD] <code|url>
+  pb show [--password] <code|url>
   pb clone [options] <code|url>
   pb config show
   pb config set server <URL>
@@ -32,7 +32,7 @@ Upload options:
   --permanent       keep the paste permanently
   --once            delete after the first successful view
   --expires VALUE   expire after a duration such as 30m, 12h, or 7d
-  --password        generate password protection
+  --password        prompt for password protection
   --code VALUE      use a custom paste code
   --label VALUE     attach a paste label
   --quiet           print only the public URL
@@ -40,18 +40,21 @@ Upload options:
 `
 
 const showUsageText = `Usage:
-  pb show [--password PASSWORD] <code|url>
+  pb show [--password] <code|url>
+
+Show options:
+  --password  prompt for the paste password
 `
 
 const cloneUsageText = `Usage:
   pb clone [options] <code|url>
 
 Clone options:
-  --source-password PASSWORD  password for the source paste
+  --source-password           prompt for the source paste password
   --permanent                 keep the cloned paste permanently
   --once                      delete after the first successful view
   --expires VALUE             expire after a duration such as 30m, 12h, or 7d
-  --password                  generate password protection for the clone
+  --password                  prompt for password protection for the clone
   --code VALUE                use a custom code for the clone
   --quiet                     print only the cloned paste URL
   --json                      print the JSON response
@@ -87,6 +90,7 @@ type application struct {
 	runCommand    func(context.Context, string, ...string) error
 	lookPath      func(string) (string, error)
 	effectiveUID  func() int
+	readPassword  func(string) (string, error)
 }
 
 func main() {
@@ -106,6 +110,9 @@ func main() {
 		configPath: defaultConfigPath(),
 		stdinTTY:   stdinTTY,
 		ctx:        ctx,
+		readPassword: func(prompt string) (string, error) {
+			return readTerminalPassword(os.Stderr, prompt)
+		},
 	}
 	os.Exit(app.run(os.Args[1:]))
 }
@@ -200,7 +207,7 @@ func (a application) runUpload(args []string) int {
 	flags.BoolVar(&opts.permanent, "permanent", false, "")
 	flags.BoolVar(&opts.once, "once", false, "")
 	flags.StringVar(&opts.expires, "expires", "", "")
-	flags.BoolVar(&opts.usePassword, "password", false, "")
+	promptPassword := flags.Bool("password", false, "")
 	flags.StringVar(&opts.code, "code", "", "")
 	flags.StringVar(&opts.label, "label", "", "")
 	flags.BoolVar(&opts.quiet, "quiet", false, "")
@@ -254,6 +261,13 @@ func (a application) runUpload(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 2
 	}
+	if *promptPassword {
+		opts.newPassword, err = a.promptNewPassword()
+		if err != nil {
+			fmt.Fprintf(a.stderr, "cannot read password: %v\n", err)
+			return 2
+		}
+	}
 	result, raw, err := upload(a.requestContext(), a.httpClient, cfg, reader, filename, opts)
 	if err != nil {
 		fmt.Fprintln(a.stderr, err)
@@ -274,7 +288,7 @@ func (a application) runShow(args []string) int {
 
 	flags := flag.NewFlagSet("show", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
-	password := flags.String("password", "", "")
+	promptPassword := flags.Bool("password", false, "")
 	if err := flags.Parse(args); err != nil {
 		fmt.Fprintf(a.stderr, "invalid arguments: %v\n", err)
 		return 2
@@ -289,7 +303,15 @@ func (a application) runShow(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 2
 	}
-	if err := getPaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), *password, a.stdout); err != nil {
+	password := ""
+	if *promptPassword {
+		password, err = a.promptExistingPassword("Paste password: ")
+		if err != nil {
+			fmt.Fprintf(a.stderr, "cannot read password: %v\n", err)
+			return 2
+		}
+	}
+	if err := getPaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), password, a.stdout); err != nil {
 		fmt.Fprintln(a.stderr, err)
 		return 1
 	}
@@ -305,11 +327,11 @@ func (a application) runClone(args []string) int {
 	flags := flag.NewFlagSet("clone", flag.ContinueOnError)
 	flags.SetOutput(io.Discard)
 	var opts uploadOptions
-	sourcePassword := flags.String("source-password", "", "")
+	promptSourcePassword := flags.Bool("source-password", false, "")
 	flags.BoolVar(&opts.permanent, "permanent", false, "")
 	flags.BoolVar(&opts.once, "once", false, "")
 	flags.StringVar(&opts.expires, "expires", "", "")
-	flags.BoolVar(&opts.usePassword, "password", false, "")
+	promptPassword := flags.Bool("password", false, "")
 	flags.StringVar(&opts.code, "code", "", "")
 	flags.BoolVar(&opts.quiet, "quiet", false, "")
 	flags.BoolVar(&opts.jsonOutput, "json", false, "")
@@ -331,7 +353,22 @@ func (a application) runClone(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 2
 	}
-	result, raw, err := clonePaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), *sourcePassword, opts)
+	sourcePassword := ""
+	if *promptSourcePassword {
+		sourcePassword, err = a.promptExistingPassword("Source paste password: ")
+		if err != nil {
+			fmt.Fprintf(a.stderr, "cannot read source password: %v\n", err)
+			return 2
+		}
+	}
+	if *promptPassword {
+		opts.newPassword, err = a.promptNewPassword()
+		if err != nil {
+			fmt.Fprintf(a.stderr, "cannot read new password: %v\n", err)
+			return 2
+		}
+	}
+	result, raw, err := clonePaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), sourcePassword, opts)
 	if err != nil {
 		fmt.Fprintln(a.stderr, err)
 		return 1

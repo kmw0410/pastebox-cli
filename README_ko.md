@@ -102,7 +102,7 @@ namcap pastebox-cli-*.pkg.tar.zst
 ### 명령어
 ```text
 pb [options] [file|-]
-pb show [--password PASSWORD] <code|url>
+pb show [--password] <code|url>
 pb clone [options] <code|url>
 pb config show
 pb config set server <URL>
@@ -135,10 +135,10 @@ pb version
    pb --expires 12h build.log
    ```
 
-3. **비밀번호 보호 Paste 조회**: 원문 조회 시 `paste-password` 헤더로 비밀번호를 전달합니다.
+3. **비밀번호 보호 Paste 조회**: 비밀번호를 화면에 표시하지 않는 프롬프트로 입력받아 `paste-password` 헤더로 전달합니다. 비밀번호는 셸 기록이나 프로세스 인자에 남지 않습니다.
 
    ```bash
-   pb show --password 'PASTE_PASSWORD' AbC123
+   pb show --password AbC123
    ```
 
 4. **스크립트 친화적 출력**: 공개 URL만 출력하거나 JSON 형식으로 받을 수 있습니다.
@@ -148,11 +148,11 @@ pb version
    pb --json server.log
    ```
 
-5. **Paste 복제**: 기존 Paste를 복제하면서 새 보존 정책, 코드 또는 생성 비밀번호를 지정할 수 있습니다. 보호된 원본 Paste의 비밀번호는 별도로 전달합니다.
+5. **Paste 복제**: 기존 Paste를 복제하면서 새 보존 정책, 코드 또는 프롬프트로 입력한 비밀번호를 지정할 수 있습니다. 보호된 원본 Paste의 비밀번호도 별도 프롬프트로 입력합니다.
 
    ```bash
    pb clone AbC123
-   pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
+   pb clone --source-password --expires 12h --password AbC123
    ```
 
 ### 릴리스 패키지

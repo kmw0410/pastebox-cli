@@ -16,20 +16,21 @@ func TestRunClone(t *testing.T) {
 		if r.Header.Get("paste-password") != "source-secret" {
 			t.Errorf("paste-password = %q", r.Header.Get("paste-password"))
 		}
-		if r.Header.Get("data-policy") != "12h" || r.Header.Get("usepassword") != "true" || r.Header.Get("code") != "cloned" {
+		if r.Header.Get("data-policy") != "12h" || r.Header.Get("new-paste-password") != "clone-secret" || r.Header.Get("usepassword") != "" || r.Header.Get("code") != "cloned" {
 			t.Errorf("unexpected clone headers: %v", r.Header)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"url":"https://public.example/cloned","expires":"soon","password":"new-secret","manage":"manage-url","delete":"delete-url"}`)
+		io.WriteString(w, `{"url":"https://public.example/cloned","expires":"soon","manage":"manage-url","delete":"delete-url"}`)
 	}))
 	defer server.Close()
 
 	app, stdout, stderr := testApplication(serverConfig(t, server.URL+"/pastebox"), strings.NewReader(""))
-	code := app.run([]string{"clone", "--source-password", "source-secret", "--expires", "12h", "--password", "--code", "cloned", "source"})
+	app.readPassword = testPasswordReader("source-secret", "clone-secret", "clone-secret")
+	code := app.run([]string{"clone", "--source-password", "--expires", "12h", "--password", "--code", "cloned", "source"})
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
 	}
-	for _, want := range []string{"url: https://public.example/cloned", "expires: soon", "password: new-secret", "manage: manage-url", "delete: delete-url"} {
+	for _, want := range []string{"url: https://public.example/cloned", "expires: soon", "manage: manage-url", "delete: delete-url"} {
 		if !strings.Contains(stdout.String(), want) {
 			t.Errorf("stdout = %q, missing %q", stdout.String(), want)
 		}
@@ -70,7 +71,8 @@ func TestRunCloneServerErrorDoesNotExposeSourcePassword(t *testing.T) {
 	defer server.Close()
 
 	app, _, stderr := testApplication(serverConfig(t, server.URL), strings.NewReader(""))
-	if code := app.run([]string{"clone", "--source-password", "source-secret", "source"}); code != 1 {
+	app.readPassword = testPasswordReader("source-secret")
+	if code := app.run([]string{"clone", "--source-password", "source"}); code != 1 {
 		t.Fatalf("exit = %d", code)
 	}
 	if strings.Contains(stderr.String(), "source-secret") {
@@ -81,7 +83,7 @@ func TestRunCloneServerErrorDoesNotExposeSourcePassword(t *testing.T) {
 func TestRunCloneRejectsUnsafeRedirectWithoutSendingPassword(t *testing.T) {
 	receivedPassword := false
 	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		receivedPassword = r.Header.Get("paste-password") != ""
+		receivedPassword = r.Header.Get("paste-password") != "" || r.Header.Get("new-paste-password") != ""
 		io.WriteString(w, `{"url":"https://public.example/cloned"}`)
 	}))
 	defer destination.Close()
@@ -92,7 +94,8 @@ func TestRunCloneRejectsUnsafeRedirectWithoutSendingPassword(t *testing.T) {
 	defer source.Close()
 
 	app, _, stderr := testApplication(serverConfig(t, source.URL), strings.NewReader(""))
-	if code := app.run([]string{"clone", "--source-password", "source-secret", "source"}); code != 1 {
+	app.readPassword = testPasswordReader("source-secret", "clone-secret", "clone-secret")
+	if code := app.run([]string{"clone", "--source-password", "--password", "source"}); code != 1 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
 	if receivedPassword {

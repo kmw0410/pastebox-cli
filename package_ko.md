@@ -124,6 +124,8 @@ pb --code deploy-log --label "운영 배포" server.log
 
 `--permanent`, `--once`, `--expires`는 함께 사용할 수 없습니다.
 
+`--password`는 제어 터미널에서 8~128자 비밀번호와 확인값을 화면에 표시하지 않고 입력받습니다. Paste 내용을 표준입력으로 스트리밍할 때도 동일하게 사용할 수 있습니다.
+
 업로드에 성공하면 기본 출력에 공개 URL과 서버가 반환한 만료시간, 생성된 비밀번호, 비공개 manage URL 및 삭제 URL이 표시됩니다.
 
 ```text
@@ -156,19 +158,19 @@ pb show AbC123 > restored.log
 비밀번호로 보호된 Paste는 다음과 같이 조회합니다.
 
 ```bash
-pb show --password 'PASTE_PASSWORD' AbC123
+pb show --password AbC123
 ```
 
 CLI는 `config.json`에 설정된 서버에 속한 전체 URL만 허용합니다. 이를 통해 다른 호스트로 Paste 비밀번호가 잘못 전송되는 일을 방지합니다.
 
-Paste를 복제하면서 보존 정책, 사용자 지정 코드 또는 생성 비밀번호 보호를 선택할 수 있습니다.
+Paste를 복제하면서 보존 정책, 사용자 지정 코드 또는 프롬프트로 입력한 비밀번호 보호를 선택할 수 있습니다.
 
 ```bash
 pb clone AbC123
-pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
+pb clone --source-password --expires 12h --password AbC123
 ```
 
-원본 파일명과 라벨은 Pastebox 서버가 보존합니다. 복제 결과는 업로드와 동일하게 일반 출력, `--quiet`, `--json` 형식을 지원합니다.
+`--source-password`는 원본 비밀번호를 한 번 입력받고, `--password`는 복제본의 새 비밀번호와 확인값을 두 번 입력받습니다. 원본 파일명과 라벨은 Pastebox 서버가 보존합니다. 복제 결과는 업로드와 동일하게 일반 출력, `--quiet`, `--json` 형식을 지원합니다.
 
 ## 업데이트
 

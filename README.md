@@ -102,7 +102,7 @@ expected for that repository.
 ### Commands
 ```text
 pb [options] [file|-]
-pb show [--password PASSWORD] <code|url>
+pb show [--password] <code|url>
 pb clone [options] <code|url>
 pb config show
 pb config set server <URL>
@@ -136,10 +136,10 @@ and response-header waits are bounded without imposing a total upload timeout.
    pb --expires 12h build.log
    ```
 
-3. **Protected paste retrieval**: Fetch raw text while sending the password through the `paste-password` header.
+3. **Protected paste retrieval**: Prompt for a hidden password and send it through the `paste-password` header. Passwords do not appear in shell history or process arguments.
 
    ```bash
-   pb show --password 'PASTE_PASSWORD' AbC123
+   pb show --password AbC123
    ```
 
 4. **Script-friendly output**: Print only the public URL or emit JSON.
@@ -149,11 +149,11 @@ and response-header waits are bounded without imposing a total upload timeout.
    pb --json server.log
    ```
 
-5. **Clone a paste**: Copy an existing paste while choosing a new retention policy, code, or generated password. Protected source pastes accept their password separately.
+5. **Clone a paste**: Copy an existing paste while choosing a new retention policy, code, or prompted password. Protected source pastes prompt for their password separately.
 
    ```bash
    pb clone AbC123
-   pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
+   pb clone --source-password --expires 12h --password AbC123
    ```
 
 ### Release packages

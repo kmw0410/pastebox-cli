@@ -68,6 +68,14 @@ func redirectErrorf(format string, args ...any) error {
 }
 
 func getHTTPClient(client *http.Client, serverURL, password string) (*http.Client, error) {
+	headers := make(http.Header)
+	if password != "" {
+		headers.Set("paste-password", password)
+	}
+	return secureHTTPClient(client, serverURL, headers)
+}
+
+func secureHTTPClient(client *http.Client, serverURL string, sensitiveHeaders http.Header) (*http.Client, error) {
 	base, err := url.Parse(serverURL)
 	if err != nil {
 		return nil, err
@@ -75,15 +83,19 @@ func getHTTPClient(client *http.Client, serverURL, password string) (*http.Clien
 	redirectClient := *client
 	previousCheckRedirect := client.CheckRedirect
 	redirectClient.CheckRedirect = func(req *http.Request, via []*http.Request) error {
-		req.Header.Del("paste-password")
+		for name := range sensitiveHeaders {
+			req.Header.Del(name)
+		}
 		if len(via) >= maxGetRedirects {
 			return redirectErrorf("redirect refused: stopped after %d redirects", maxGetRedirects)
 		}
 		if err := validateGetRedirect(base, req.URL); err != nil {
 			return err
 		}
-		if password != "" {
-			req.Header.Set("paste-password", password)
+		for name, values := range sensitiveHeaders {
+			for _, value := range values {
+				req.Header.Add(name, value)
+			}
 		}
 		if previousCheckRedirect != nil {
 			return previousCheckRedirect(req, via)

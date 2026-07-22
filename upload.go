@@ -17,6 +17,7 @@ type uploadOptions struct {
 	once        bool
 	expires     string
 	usePassword bool
+	newPassword string
 	code        string
 	label       string
 	quiet       bool
@@ -96,6 +97,9 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 	if opts.usePassword {
 		req.Header.Set("usepassword", "true")
 	}
+	if opts.newPassword != "" {
+		req.Header.Set("new-paste-password", opts.newPassword)
+	}
 	if opts.code != "" {
 		req.Header.Set("code", opts.code)
 	}
@@ -103,7 +107,15 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 		req.Header.Set("label", opts.label)
 	}
 
-	resp, err := client.Do(req)
+	sensitiveHeaders := make(http.Header)
+	if opts.newPassword != "" {
+		sensitiveHeaders.Set("new-paste-password", opts.newPassword)
+	}
+	redirectClient, err := secureHTTPClient(client, cfg.ServerURL, sensitiveHeaders)
+	if err != nil {
+		return uploadResponse{}, nil, fmt.Errorf("configure upload redirects: %w", err)
+	}
+	resp, err := redirectClient.Do(req)
 	if err != nil {
 		return uploadResponse{}, nil, fmt.Errorf("request failed for %s: %w", cfg.ServerURL, err)
 	}

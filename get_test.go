@@ -26,7 +26,8 @@ func TestRunGet(t *testing.T) {
 	}))
 	defer server.Close()
 	app, stdout, stderr := testApplication(serverConfig(t, server.URL+"/pastebox"), strings.NewReader(""))
-	if code := app.run([]string{"show", "--password", "top-secret", "abc123"}); code != 0 {
+	app.readPassword = testPasswordReader("top-secret")
+	if code := app.run([]string{"show", "--password", "abc123"}); code != 0 {
 		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
 	}
 	if stdout.String() != "paste content" {
@@ -65,7 +66,8 @@ func TestRunGetAllowsSafeRedirects(t *testing.T) {
 			defer server.Close()
 
 			app, stdout, stderr := testApplication(serverConfig(t, server.URL+"/pastebox"), strings.NewReader(""))
-			if code := app.run([]string{"show", "--password", "top-secret", "start"}); code != 0 {
+			app.readPassword = testPasswordReader("top-secret")
+			if code := app.run([]string{"show", "--password", "start"}); code != 0 {
 				t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
 			}
 			if stdout.String() != "redirected paste" {
@@ -150,7 +152,8 @@ func TestRunGetRejectsUnsafeRedirectsWithoutSendingPassword(t *testing.T) {
 			defer source.Close()
 
 			app, stdout, stderr := testApplication(serverConfig(t, source.URL+"/pastebox"), strings.NewReader(""))
-			if code := app.run([]string{"show", "--password", "top-secret", "start"}); code != 1 {
+			app.readPassword = testPasswordReader("top-secret")
+			if code := app.run([]string{"show", "--password", "start"}); code != 1 {
 				t.Fatalf("exit = %d, stdout = %q, stderr = %q", code, stdout.String(), stderr.String())
 			}
 			if !strings.Contains(stderr.String(), tt.want) {
@@ -181,7 +184,8 @@ func TestRunGetRejectsTooManyRedirects(t *testing.T) {
 	defer server.Close()
 
 	app, _, stderr := testApplication(serverConfig(t, server.URL+"/pastebox"), strings.NewReader(""))
-	if code := app.run([]string{"show", "--password", "top-secret", "start"}); code != 1 {
+	app.readPassword = testPasswordReader("top-secret")
+	if code := app.run([]string{"show", "--password", "start"}); code != 1 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
 	if !strings.Contains(stderr.String(), "stopped after 10 redirects") {
@@ -212,8 +216,8 @@ func TestRunCommandHelp(t *testing.T) {
 		args []string
 		want string
 	}{
-		{name: "show long", args: []string{"show", "--help"}, want: "pb show [--password PASSWORD] <code|url>"},
-		{name: "show short", args: []string{"show", "-h"}, want: "pb show [--password PASSWORD] <code|url>"},
+		{name: "show long", args: []string{"show", "--help"}, want: "pb show [--password] <code|url>"},
+		{name: "show short", args: []string{"show", "-h"}, want: "pb show [--password] <code|url>"},
 		{name: "clone long", args: []string{"clone", "--help"}, want: "pb clone [options] <code|url>"},
 		{name: "clone short", args: []string{"clone", "-h"}, want: "pb clone [options] <code|url>"},
 		{name: "config long", args: []string{"config", "--help"}, want: "pb config set server <URL>"},

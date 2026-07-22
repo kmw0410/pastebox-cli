@@ -124,6 +124,8 @@ pb --code deploy-log --label "Production deployment" server.log
 
 `--permanent`, `--once`, and `--expires` cannot be combined.
 
+`--password` reads and confirms an 8-128 character password from the controlling terminal without echoing it. This also works when paste content is streamed through standard input.
+
 The normal successful output contains the public URL and, when returned by the server, its expiration, generated password, private manage URL, and delete URL:
 
 ```text
@@ -156,19 +158,19 @@ pb show AbC123 > restored.log
 For a protected paste, provide its password through the request header with:
 
 ```bash
-pb show --password 'PASTE_PASSWORD' AbC123
+pb show --password AbC123
 ```
 
 The CLI accepts full paste URLs only when they belong to the server configured in `config.json`. This prevents accidentally sending a paste password to another host.
 
-Clone a paste while optionally changing its retention policy, custom code, or generated password protection:
+Clone a paste while optionally changing its retention policy, custom code, or prompted password protection:
 
 ```bash
 pb clone AbC123
-pb clone --source-password 'PASTE_PASSWORD' --expires 12h --password AbC123
+pb clone --source-password --expires 12h --password AbC123
 ```
 
-The source filename and label are preserved by the Pastebox server. Clone output uses the same normal, `--quiet`, and `--json` formats as uploads.
+`--source-password` prompts once for the source password, while `--password` prompts twice to set and confirm the clone's new password. The source filename and label are preserved by the Pastebox server. Clone output uses the same normal, `--quiet`, and `--json` formats as uploads.
 
 ## Update
 

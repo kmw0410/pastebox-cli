@@ -32,11 +32,21 @@ func clonePaste(ctx context.Context, client *http.Client, cfg config, target, so
 	if opts.usePassword {
 		req.Header.Set("usepassword", "true")
 	}
+	if opts.newPassword != "" {
+		req.Header.Set("new-paste-password", opts.newPassword)
+	}
 	if opts.code != "" {
 		req.Header.Set("code", opts.code)
 	}
 
-	redirectClient, err := getHTTPClient(client, cfg.ServerURL, sourcePassword)
+	sensitiveHeaders := make(http.Header)
+	if sourcePassword != "" {
+		sensitiveHeaders.Set("paste-password", sourcePassword)
+	}
+	if opts.newPassword != "" {
+		sensitiveHeaders.Set("new-paste-password", opts.newPassword)
+	}
+	redirectClient, err := secureHTTPClient(client, cfg.ServerURL, sensitiveHeaders)
 	if err != nil {
 		return uploadResponse{}, nil, fmt.Errorf("configure clone redirects: %w", err)
 	}

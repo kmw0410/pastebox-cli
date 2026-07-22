@@ -47,20 +47,21 @@ func TestRunUploadStdin(t *testing.T) {
 		if got := r.Header.Get("Content-Type"); got != "text/plain; charset=utf-8" {
 			t.Errorf("Content-Type = %q", got)
 		}
-		if r.Header.Get("data-policy") != "12h" || r.Header.Get("usepassword") != "true" || r.Header.Get("code") != "build-log" || r.Header.Get("label") != "Build log" {
+		if r.Header.Get("data-policy") != "12h" || r.Header.Get("new-paste-password") != "custom-secret" || r.Header.Get("usepassword") != "" || r.Header.Get("code") != "build-log" || r.Header.Get("label") != "Build log" {
 			t.Errorf("unexpected upload headers: %v", r.Header)
 		}
 		w.Header().Set("Content-Type", "application/json")
-		io.WriteString(w, `{"url":"https://public.example/build-log","expires":"soon","password":"secret","manage":"manage-url","delete":"delete-url"}`)
+		io.WriteString(w, `{"url":"https://public.example/build-log","expires":"soon","manage":"manage-url","delete":"delete-url"}`)
 	}))
 	defer server.Close()
 
 	app, stdout, stderr := testApplication(serverConfig(t, server.URL+"/pastebox"), strings.NewReader("hello from stdin"))
+	app.readPassword = testPasswordReader("custom-secret", "custom-secret")
 	code := app.run([]string{"--expires", "12h", "--password", "--code", "build-log", "--label", "Build log"})
 	if code != 0 {
 		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
 	}
-	for _, want := range []string{"url: https://public.example/build-log", "expires: soon", "password: secret", "manage: manage-url", "delete: delete-url"} {
+	for _, want := range []string{"url: https://public.example/build-log", "expires: soon", "manage: manage-url", "delete: delete-url"} {
 		if !strings.Contains(stdout.String(), want) {
 			t.Errorf("stdout = %q, missing %q", stdout.String(), want)
 		}
@@ -127,5 +128,31 @@ func TestRunUploadServerError(t *testing.T) {
 	}
 	if got := stderr.String(); !strings.Contains(got, "code already exists") || !strings.Contains(got, "HTTP 409") {
 		t.Fatalf("stderr = %q", got)
+	}
+}
+
+func TestRunUploadRejectsUnsafeRedirectWithoutSendingPassword(t *testing.T) {
+	receivedPassword := false
+	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		receivedPassword = r.Header.Get("new-paste-password") != ""
+		io.WriteString(w, `{"url":"https://public.example/paste"}`)
+	}))
+	defer destination.Close()
+
+	source := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, destination.URL+"/paste", http.StatusTemporaryRedirect)
+	}))
+	defer source.Close()
+
+	app, _, stderr := testApplication(serverConfig(t, source.URL), strings.NewReader("body"))
+	app.readPassword = testPasswordReader("custom-secret", "custom-secret")
+	if code := app.run([]string{"--password"}); code != 1 {
+		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+	}
+	if receivedPassword {
+		t.Fatal("unsafe redirect received new paste password")
+	}
+	if strings.Contains(stderr.String(), "custom-secret") {
+		t.Fatalf("stderr exposed password: %q", stderr.String())
 	}
 }

@@ -42,7 +42,7 @@ func TestRunRequestCancellation(t *testing.T) {
 		input io.Reader
 	}{
 		{name: "upload", input: strings.NewReader("paste body")},
-		{name: "show", args: []string{"show", "--password", "top-secret", "abc123"}, input: strings.NewReader("")},
+		{name: "show", args: []string{"show", "--password", "abc123"}, input: strings.NewReader("")},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -58,6 +58,7 @@ func TestRunRequestCancellation(t *testing.T) {
 			app, _, stderr := testApplication(serverConfig(t, "https://paste.example.com"), tt.input)
 			app.httpClient = client
 			app.ctx = ctx
+			app.readPassword = testPasswordReader("top-secret")
 			done := make(chan int, 1)
 			go func() {
 				done <- app.run(tt.args)
