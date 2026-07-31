@@ -79,19 +79,6 @@ func TestRunManagePatchActions(t *testing.T) {
 	}
 }
 
-func TestRunManageDeleteDirectsToDeleteCommand(t *testing.T) {
-	app, stdout, stderr := testApplication("/missing/config.json", strings.NewReader(""))
-	if code := app.run([]string{"manage", "delete", "AbC123"}); code != 2 {
-		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
-	}
-	if stdout.Len() != 0 {
-		t.Fatalf("stdout = %q", stdout.String())
-	}
-	if got := stderr.String(); got != "pb manage delete has been removed; use pb delete to delete a paste\n" {
-		t.Fatalf("stderr = %q", got)
-	}
-}
-
 func TestRunManageRejectsUnsafeRedirectWithoutSendingToken(t *testing.T) {
 	receivedToken := false
 	destination := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -37,10 +37,6 @@ func (a application) runManage(args []string) int {
 		fmt.Fprint(a.stdout, manageUsageText)
 		return 0
 	}
-	if len(args) >= 1 && args[0] == "delete" {
-		fmt.Fprintln(a.stderr, "pb manage delete has been removed; use pb delete to delete a paste")
-		return 2
-	}
 
 	command, target, action, err := parseManageArguments(args)
 	if err != nil {
