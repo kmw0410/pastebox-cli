@@ -47,6 +47,9 @@ func TestRunUploadStdin(t *testing.T) {
 		if got := r.Header.Get("Content-Type"); got != "text/plain; charset=utf-8" {
 			t.Errorf("Content-Type = %q", got)
 		}
+		if got := r.Header.Get("User-Agent"); got != "Pastebox-CLI/1.0" {
+			t.Errorf("User-Agent = %q", got)
+		}
 		if r.Header.Get("data-policy") != "12h" || r.Header.Get("password") != "custom-secret" || r.Header.Get("usepassword") != "" || r.Header.Get("code") != "build-log" || r.Header.Get("label") != "Build log" {
 			t.Errorf("unexpected upload headers: %v", r.Header)
 		}

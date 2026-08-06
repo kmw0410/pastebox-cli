@@ -92,6 +92,7 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 		return uploadResponse{}, nil, fmt.Errorf("create upload request: %w", err)
 	}
 	req.Header.Set("Content-Type", contentType)
+	req.Header.Set("User-Agent", "Pastebox-CLI/1.0")
 	if policy := opts.policy(); policy != "" {
 		req.Header.Set("data-policy", policy)
 	}
