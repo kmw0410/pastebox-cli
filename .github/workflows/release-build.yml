@@ -25,6 +25,9 @@ concurrency:
 
 jobs:
   test:
+    if: >
+      github.event_name != 'push' ||
+      contains(github.event.head_commit.message, '[skip actions]') == false
     runs-on: ubuntu-latest
 
     steps:
@@ -58,7 +61,8 @@ jobs:
   tag:
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+      (github.event_name == 'push' && github.ref == 'refs/heads/main' &&
+      contains(github.event.head_commit.message, '[skip actions]') == false)
     needs: test
     runs-on: ubuntu-latest
 
