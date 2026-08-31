@@ -102,6 +102,7 @@ type application struct {
 	goarch        string
 	releaseAPIURL string
 	runCommand    func(context.Context, string, ...string) error
+	outputCommand func(context.Context, string, ...string) ([]byte, error)
 	lookPath      func(string) (string, error)
 	effectiveUID  func() int
 	readPassword  func(string) (string, error)

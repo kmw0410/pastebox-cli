@@ -114,9 +114,11 @@ pb version
 ```
 
 명령별 사용법은 `pb show --help`, `pb clone --help`, `pb delete --help`, `pb manage --help`, `pb config --help` 또는 `pb update --help`로
-확인할 수 있습니다. Arch Linux 계열에서 `pb update`는 최신 릴리스를 확인한
-뒤 설치된 `paru` 또는 `yay`로 AUR 패키지를 업데이트합니다. Debian/Ubuntu
-및 지원되는 RHEL/Fedora 계열에서는 최신 GitHub Release 패키지를 내려받아
+확인할 수 있습니다. ~~Arch Linux 계열에서 `pb update`는 최신 릴리스와 설치된
+`paru` 또는 `yay`가 보고하는 AUR 패키지 버전을 확인하고, 실제 업데이트가
+있을 때만 해당 패키지를 업데이트합니다.~~
+**AUR은 일시적으로 이용할 수 없으며 [관련 공지](https://archlinux.org/news/active-aur-malicious-packages-incident/)를 참고하십시오.**
+Debian/Ubuntu 및 지원되는 RHEL/Fedora 계열에서는 `pb update`가 최신 GitHub Release 패키지를 내려받아
 검증한 후 설치합니다.
 진행 중인 네트워크 요청은 `Ctrl-C`로 취소할 수 있으며, 전체 업로드 시간을
 제한하지 않으면서 연결, TLS 핸드셰이크, 응답 헤더 대기 시간만 제한합니다.

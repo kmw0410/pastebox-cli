@@ -21,10 +21,12 @@ concurrency:
 
 jobs:
   publish:
-    if: >
-      github.event_name == 'workflow_dispatch' ||
-      (github.event.workflow_run.conclusion == 'success' &&
-      contains(github.event.workflow_run.head_commit.message, '[skip actions]') == false)
+    # Temporarily disabled while Arch/AUR updates are unavailable.
+    # if: >
+    #   github.event_name == 'workflow_dispatch' ||
+    #   (github.event.workflow_run.conclusion == 'success' &&
+    #   contains(github.event.workflow_run.head_commit.message, '[skip actions]') == false)
+    if: ${{ false }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
 

@@ -49,12 +49,18 @@ func TestAutomatedReleaseWorkflowsHonorSkipActionsMarker(t *testing.T) {
 		".github/workflows/release-build.yml",
 		".github/workflows/cli-package-build.yml",
 		".github/workflows/release.yml",
-		".github/workflows/aur-publish.yml",
 	} {
 		workflow := readWorkflow(t, path)
 		if !strings.Contains(workflow, "[skip actions]") {
 			t.Errorf("%s does not honor the [skip actions] commit marker", path)
 		}
+	}
+}
+
+func TestAURPublishWorkflowIsTemporarilyDisabled(t *testing.T) {
+	workflow := readWorkflow(t, ".github/workflows/aur-publish.yml")
+	if !strings.Contains(workflow, "if: ${{ false }}") {
+		t.Fatal("aur-publish.yml publish job is not disabled")
 	}
 }
 

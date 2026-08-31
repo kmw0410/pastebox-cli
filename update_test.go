@@ -25,92 +25,33 @@ func writeOSRelease(t *testing.T, content string) string {
 	return path
 }
 
-func TestRunUpdateUsesParuForArch(t *testing.T) {
-	previousVersion := version
-	version = "v26.07.20-1"
-	t.Cleanup(func() { version = previousVersion })
-
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(latestRelease{TagName: "v26.07.21-1"})
-	}))
-	defer server.Close()
-
+func TestRunUpdateReportsArchUpdatesTemporarilyUnavailable(t *testing.T) {
 	app, stdout, stderr := testApplication("", bytes.NewReader(nil))
 	app.osReleasePath = writeOSRelease(t, "ID=endeavouros\nID_LIKE=arch\n")
-	app.releaseAPIURL = server.URL
-	app.httpClient = server.Client()
-	app.lookPath = func(name string) (string, error) {
-		return "/usr/bin/" + name, nil
+	app.httpClient = &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
+		t.Fatal("Arch update attempted a network request")
+		return nil, nil
+	})}
+	app.lookPath = func(string) (string, error) {
+		t.Fatal("Arch update searched for an AUR helper")
+		return "", nil
 	}
-	var commandName string
-	var commandArgs []string
-	app.runCommand = func(_ context.Context, name string, args ...string) error {
-		commandName = name
-		commandArgs = append([]string(nil), args...)
+	app.outputCommand = func(context.Context, string, ...string) ([]byte, error) {
+		t.Fatal("Arch update queried an AUR helper")
+		return nil, nil
+	}
+	app.runCommand = func(context.Context, string, ...string) error {
+		t.Fatal("Arch update ran an AUR helper")
 		return nil
 	}
 
 	if code := app.run([]string{"update"}); code != 0 {
 		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
 	}
-	if commandName != "paru" || len(commandArgs) != 2 || commandArgs[0] != "-S" || commandArgs[1] != "pastebox-cli" {
-		t.Fatalf("command = %q %q", commandName, commandArgs)
-	}
-	if !strings.Contains(stdout.String(), "Updating pastebox-cli to v26.07.21-1 with paru") {
+	if !strings.Contains(stdout.String(), "Arch Linux updates are temporarily unavailable") {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
-}
-
-func TestRunUpdateFallsBackToYayForArch(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(latestRelease{TagName: "v26.07.21-1"})
-	}))
-	defer server.Close()
-
-	app, _, stderr := testApplication("", bytes.NewReader(nil))
-	app.osReleasePath = writeOSRelease(t, "ID=arch\n")
-	app.releaseAPIURL = server.URL
-	app.httpClient = server.Client()
-	app.lookPath = func(name string) (string, error) {
-		if name == "yay" {
-			return "/usr/bin/yay", nil
-		}
-		return "", os.ErrNotExist
-	}
-	var commandName string
-	app.runCommand = func(_ context.Context, name string, _ ...string) error {
-		commandName = name
-		return nil
-	}
-
-	if code := app.run([]string{"update"}); code != 0 {
-		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
-	}
-	if commandName != "yay" {
-		t.Fatalf("command = %q, want yay", commandName)
-	}
-}
-
-func TestRunUpdateGuidesArchUserWithoutAURHelper(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		json.NewEncoder(w).Encode(latestRelease{TagName: "v26.07.21-1"})
-	}))
-	defer server.Close()
-
-	app, stdout, stderr := testApplication("", bytes.NewReader(nil))
-	app.osReleasePath = writeOSRelease(t, "ID=arch\n")
-	app.releaseAPIURL = server.URL
-	app.httpClient = server.Client()
-	app.lookPath = func(string) (string, error) { return "", os.ErrNotExist }
-	app.runCommand = func(context.Context, string, ...string) error {
-		t.Fatal("AUR helper ran when none was installed")
-		return nil
-	}
-
-	if code := app.run([]string{"update"}); code != 0 {
-		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
-	}
-	if !strings.Contains(stdout.String(), "Install paru or yay, then run pb update again") {
+	if !strings.Contains(stdout.String(), releasePageURL) {
 		t.Fatalf("stdout = %q", stdout.String())
 	}
 }

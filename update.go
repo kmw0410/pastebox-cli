@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"crypto/sha256"
 	"crypto/subtle"
 	"encoding/hex"
@@ -19,6 +20,7 @@ import (
 )
 
 const defaultReleaseAPIURL = "https://api.github.com/repos/kmw0410/pastebox-cli/releases/latest"
+const releasePageURL = "https://github.com/kmw0410/pastebox-cli/releases"
 
 type releaseAsset struct {
 	Name               string `json:"name"`
@@ -52,7 +54,11 @@ func (a application) runUpdate(args []string) int {
 		return 2
 	}
 	if distroMatches(distro, "arch") {
-		return a.runArchUpdate()
+		// AUR updates are temporarily disabled.
+		// return a.runArchUpdate()
+		fmt.Fprintln(a.stdout, "Arch Linux updates are temporarily unavailable.")
+		fmt.Fprintf(a.stdout, "Download a package manually from: %s\n", releasePageURL)
+		return 0
 	}
 
 	target, err := selectUpdateTarget(distro, a.updateGOARCH())
@@ -108,13 +114,44 @@ func (a application) runArchUpdate() int {
 		fmt.Fprintln(a.stdout, "Install paru or yay, then run pb update again.")
 		return 0
 	}
+	updates, err := a.executeCommandOutput(helper, "-Qua", "pastebox-cli")
+	if err != nil {
+		fmt.Fprintf(a.stderr, "cannot check AUR updates with %s: %v\n", helper, err)
+		return 1
+	}
+	if len(bytes.TrimSpace(updates)) == 0 {
+		fmt.Fprintln(a.stdout, "No pastebox-cli update is currently available from AUR.")
+		return 0
+	}
 
 	fmt.Fprintf(a.stdout, "Updating pastebox-cli to %s with %s...\n", release.TagName, helper)
-	if err := a.executeCommand(helper, "-S", "pastebox-cli"); err != nil {
+	if err := a.executeCommand(helper, "-S", "--needed", "pastebox-cli"); err != nil {
 		fmt.Fprintf(a.stderr, "cannot update with %s: %v\n", helper, err)
 		return 1
 	}
 	return 0
+}
+
+func (a application) executeCommandOutput(name string, args ...string) ([]byte, error) {
+	if a.outputCommand != nil {
+		return a.outputCommand(a.requestContext(), name, args...)
+	}
+	cmd := exec.CommandContext(a.requestContext(), name, args...)
+	cmd.Stdin = a.stdin
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok && exitErr.ExitCode() == 1 && stdout.Len() == 0 && stderr.Len() == 0 {
+			return nil, nil
+		}
+		if message := strings.TrimSpace(stderr.String()); message != "" {
+			return nil, errors.New(message)
+		}
+		return nil, err
+	}
+	return stdout.Bytes(), nil
 }
 
 func (a application) findAURHelper() string {

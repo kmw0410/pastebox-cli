@@ -114,9 +114,11 @@ pb version
 ```
 
 Run `pb show --help`, `pb clone --help`, `pb delete --help`, `pb manage --help`, `pb config --help`, or `pb update --help` for
-command-specific usage. On Arch Linux family systems, `pb update` checks the
-latest release and updates the AUR package with an installed `paru` or `yay`.
-On Debian/Ubuntu and supported RHEL/Fedora systems, it
+command-specific usage. ~~On Arch Linux family systems, `pb update` checks the
+latest release, queries the AUR package version with an installed `paru` or
+`yay`, and runs a package-specific update only when one is available.~~
+**AUR is temporarily unavailable; see the [related notice](https://archlinux.org/news/active-aur-malicious-packages-incident/).**
+On Debian/Ubuntu and supported RHEL/Fedora systems, `pb update`
 downloads, verifies, and installs the matching latest GitHub Release package.
 Active
 network requests can be canceled with `Ctrl-C`; connection setup, TLS handshake,

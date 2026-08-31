@@ -207,18 +207,22 @@ digest를 검증한 다음 `apt-get`으로 설치합니다. x86-64 RHEL 계열�
 Fedora에서는 같은 방식으로 RPM을 검증하고 `dnf`로 설치합니다. 패키지
 관리자가 `sudo`를 통해 관리자 권한을 요청할 수 있습니다.
 
-Arch Linux 계열에서는 최신 GitHub Release를 확인하지만 해당 Release의
+~~Arch Linux 계열에서는 최신 GitHub Release를 확인하지만 해당 Release의
 패키지를 내려받지는 않습니다. 새 릴리스가 있으면 `paru`를 우선 사용하고,
-없으면 `yay`를 사용해 다음 AUR 업데이트를 실행합니다.
+없으면 `yay`를 사용해 `pastebox-cli` AUR 패키지의 업데이트 가능 여부를
+확인합니다. 실제 새 패키지가 있을 때만 해당 패키지 설치를 실행합니다.~~
 
-```bash
-paru -S pastebox-cli
-# paru가 없으면
-yay -S pastebox-cli
-```
+- ~~`paru -Qua pastebox-cli`~~
+- ~~`paru -S --needed pastebox-cli`~~
+- ~~`paru`가 없으면:~~
+- ~~`yay -Qua pastebox-cli`~~
+- ~~`yay -S --needed pastebox-cli`~~
 
-두 AUR 도구가 모두 없으면 `paru` 또는 `yay`를 설치한 뒤 `pb update`를 다시
-실행하라고 안내하며, 이 경우는 오류로 처리하지 않습니다.
+~~이 명령들은 전체 시스템 업그레이드를 요청하지 않습니다. 두 AUR 도구가 모두
+없으면 `paru` 또는 `yay`를 설치한 뒤 `pb update`를 다시 실행하라고 안내하며,
+이 경우는 오류로 처리하지 않습니다.~~
+
+**AUR은 일시적으로 이용할 수 없으며 [관련 공지](https://archlinux.org/news/active-aur-malicious-packages-incident/)를 참고하십시오.**
 
 이미 최신 버전이면 변경하지 않습니다. ARM 시스템에서는 RPM 자동 업데이트를
 지원하지 않습니다.
