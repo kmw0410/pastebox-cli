@@ -110,6 +110,7 @@ pb config show
 pb config set server <URL>
 pb config validate
 pb update
+pb completion <zsh|bash|fish>
 pb version
 ```
 
@@ -123,6 +124,17 @@ downloads, verifies, and installs the matching latest GitHub Release package.
 Active
 network requests can be canceled with `Ctrl-C`; connection setup, TLS handshake,
 and response-header waits are bounded without imposing a total upload timeout.
+
+### Shell completion
+
+Print the completion script for your shell and append it to that shell's startup
+file. Restart the shell or source the file afterwards.
+
+```bash
+pb completion zsh >> ~/.zshrc
+pb completion bash >> ~/.bashrc
+pb completion fish >> ~/.config/fish/config.fish
+```
 
 ### Features
 1. **Streaming uploads**: Upload a file with its original filename or pipe stdin without loading the full input into memory.

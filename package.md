@@ -240,11 +240,23 @@ pb delete --help
 pb manage --help
 pb config --help
 pb update --help
+pb completion --help
 ```
 
 Press `Ctrl-C` to cancel an active upload or retrieval request. Connection setup,
 TLS handshake, and response-header waits have bounded timeouts, while uploads do
 not have a whole-request timeout that would interrupt large streaming inputs.
+
+## Shell completion
+
+Print the static completion script for your shell and append it to the shell's
+startup file. Restart the shell or source the file after adding it.
+
+```bash
+pb completion zsh >> ~/.zshrc
+pb completion bash >> ~/.bashrc
+pb completion fish >> ~/.config/fish/config.fish
+```
 
 ## Exit codes
 

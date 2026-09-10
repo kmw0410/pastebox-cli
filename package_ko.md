@@ -238,11 +238,23 @@ pb delete --help
 pb manage --help
 pb config --help
 pb update --help
+pb completion --help
 ```
 
 진행 중인 업로드 또는 조회 요청은 `Ctrl-C`로 취소할 수 있습니다. 연결, TLS
 핸드셰이크, 응답 헤더 대기에는 제한 시간이 적용되지만, 큰 스트리밍 입력을
 중단할 수 있는 전체 요청 시간 제한은 적용하지 않습니다.
+
+## 셸 자동 완성
+
+사용 중인 셸용 정적 자동 완성 스크립트를 출력하여 셸의 시작 파일에
+추가합니다. 추가한 뒤에는 셸을 다시 시작하거나 파일을 source 하세요.
+
+```bash
+pb completion zsh >> ~/.zshrc
+pb completion bash >> ~/.bashrc
+pb completion fish >> ~/.config/fish/config.fish
+```
 
 ## 종료 코드
 

@@ -110,6 +110,7 @@ pb config show
 pb config set server <URL>
 pb config validate
 pb update
+pb completion <zsh|bash|fish>
 pb version
 ```
 
@@ -122,6 +123,17 @@ Debian/Ubuntu 및 지원되는 RHEL/Fedora 계열에서는 `pb update`가 최신
 검증한 후 설치합니다.
 진행 중인 네트워크 요청은 `Ctrl-C`로 취소할 수 있으며, 전체 업로드 시간을
 제한하지 않으면서 연결, TLS 핸드셰이크, 응답 헤더 대기 시간만 제한합니다.
+
+### 셸 자동 완성
+
+사용 중인 셸에 맞는 자동 완성 스크립트를 출력하여 해당 셸의 시작 파일에
+추가합니다. 추가한 뒤에는 셸을 다시 시작하거나 파일을 source 하세요.
+
+```bash
+pb completion zsh >> ~/.zshrc
+pb completion bash >> ~/.bashrc
+pb completion fish >> ~/.config/fish/config.fish
+```
 
 ### 기능
 1. **스트리밍 업로드**: 파일명 보존 업로드와 stdin 파이프 입력을 모두 지원하며, 전체 입력을 메모리에 올리지 않습니다.

@@ -28,6 +28,7 @@ const usageText = `Usage:
   pb config set server <URL>
   pb config validate
   pb update
+  pb completion <zsh|bash|fish>
   pb version
 
 Upload options:
@@ -82,6 +83,10 @@ const configUsageText = `Usage:
 
 const updateUsageText = `Usage:
   pb update
+`
+
+const completionUsageText = `Usage:
+  pb completion <zsh|bash|fish>
 `
 
 const (
@@ -171,6 +176,8 @@ func (a application) run(args []string) int {
 			return a.runManage(args[1:])
 		case "update":
 			return a.runUpdate(args[1:])
+		case "completion":
+			return a.runCompletion(args[1:])
 		}
 	}
 	return a.runUpload(args)
