@@ -5,6 +5,8 @@ English | [Korean](./README_ko.md)
 
 Packages: [installation and usage](./package.md)
 
+Documentation: [English and Korean](./docs/README.md)
+
 ### Tech stack
 | Layer | Stack |
 |--------|------|
