@@ -73,6 +73,8 @@ pastebox-cli/
 └── workflow_test.go
 ```
 
-## [AUR](https://aur.archlinux.org/packages/pastebox-cli)
+## AUR
 
-**AUR은 일시적으로 이용할 수 없습니다.**
+[pastebox-cli](https://aur.archlinux.org/packages/pastebox-cli)
+
+**AUR은 일시적으로 이용할 수 없으며 [관련 공지](https://archlinux.org/news/active-aur-malicious-packages-incident/)를 참고하십시오.**

@@ -73,6 +73,8 @@ pastebox-cli/
 └── workflow_test.go
 ```
 
-## [AUR](https://aur.archlinux.org/packages/pastebox-cli)
+## AUR
 
-**AUR is temporarily unavailable.**
+[pastebox-cli](https://aur.archlinux.org/packages/pastebox-cli)
+
+**AUR is temporarily unavailable; see the [related notice](https://archlinux.org/news/active-aur-malicious-packages-incident/).**
