@@ -1,4 +1,6 @@
-# AUR
+# Packaging
+
+## AUR
 
 The repository-root `PKGBUILD` and `.SRCINFO` define the source-based AUR
 package. For a new release:
