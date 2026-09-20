@@ -27,7 +27,8 @@ jobs:
     if: >
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
-      contains(github.event.workflow_run.head_commit.message, '[skip actions]') == false)
+      contains(github.event.workflow_run.head_commit.message, '[skip actions]') == false &&
+      github.event.workflow_run.head_commit.author.username != 'dependabot[bot]')
     runs-on: ubuntu-latest
 
     permissions:

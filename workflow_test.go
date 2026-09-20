@@ -57,6 +57,20 @@ func TestAutomatedReleaseWorkflowsHonorSkipActionsMarker(t *testing.T) {
 	}
 }
 
+func TestAutomatedReleaseWorkflowsSkipDependabotCommits(t *testing.T) {
+	for _, path := range []string{
+		".github/workflows/release-build.yml",
+		".github/workflows/cli-package-build.yml",
+		".github/workflows/release.yml",
+		".github/workflows/package-metadata-update.yml",
+	} {
+		workflow := readWorkflow(t, path)
+		if !strings.Contains(workflow, "dependabot[bot]") {
+			t.Errorf("%s does not skip Dependabot commits", path)
+		}
+	}
+}
+
 func TestAURPublishWorkflowIsTemporarilyDisabled(t *testing.T) {
 	workflow := readWorkflow(t, ".github/workflows/aur-publish.yml")
 	if !strings.Contains(workflow, "if: ${{ false }}") {

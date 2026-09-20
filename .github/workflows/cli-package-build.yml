@@ -25,7 +25,8 @@ jobs:
       (github.event.workflow_run.event == 'workflow_dispatch' ||
       (github.event.workflow_run.event == 'push' &&
       github.event.workflow_run.head_branch == 'main')) &&
-      contains(github.event.workflow_run.head_commit.message, '[skip actions]') == false)
+      contains(github.event.workflow_run.head_commit.message, '[skip actions]') == false &&
+      github.event.workflow_run.head_commit.author.username != 'dependabot[bot]')
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
