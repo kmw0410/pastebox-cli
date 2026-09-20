@@ -85,7 +85,7 @@ jobs:
           done
 
       - name: Set up QEMU for package tests
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v4
         with:
           platforms: arm64
 
