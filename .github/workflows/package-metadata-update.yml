@@ -1,0 +1,132 @@
+name: Package Metadata Update
+
+on:
+  workflow_run:
+    workflows:
+      - Release
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing GitHub Release tag to use for package metadata
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: package-metadata-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: >
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      contains(github.event.workflow_run.head_commit.message, '[skip actions]') == false)
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Resolve release tag
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG_INPUT: ${{ inputs.tag }}
+          WORKFLOW_SHA: ${{ github.event.workflow_run.head_sha }}
+        shell: bash
+        run: |
+          git fetch --tags --force
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            TAG="$TAG_INPUT"
+          else
+            TAG="$(git tag --points-at "$WORKFLOW_SHA" | grep '^v' | sort -V | tail -n 1)"
+          fi
+
+          if [[ ! "$TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
+            echo "Invalid release tag: $TAG" >&2
+            exit 1
+          fi
+
+          git rev-parse --verify "${TAG}^{commit}" >/dev/null
+          gh release view "$TAG" >/dev/null
+
+          PACKAGE_VERSION="${TAG#v}"
+          PACKAGE_VERSION="${PACKAGE_VERSION//-/.}"
+          SHORT_SHA="$(git rev-parse --short "${TAG}^{commit}")"
+
+          {
+            echo "tag=$TAG"
+            echo "package_version=$PACKAGE_VERSION"
+            echo "short_sha=$SHORT_SHA"
+          } >> "$GITHUB_OUTPUT"
+          echo "Using release: $TAG"
+
+      - name: Update PKGBUILD
+        env:
+          PACKAGE_VERSION: ${{ steps.release.outputs.package_version }}
+          SHORT_SHA: ${{ steps.release.outputs.short_sha }}
+          TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          ARCHIVE="$RUNNER_TEMP/pastebox-cli-${TAG}.tar.gz"
+          ARCHIVE_URL="https://github.com/${GITHUB_REPOSITORY}/archive/refs/tags/${TAG}.tar.gz"
+
+          curl --fail --location --retry 3 --output "$ARCHIVE" "$ARCHIVE_URL"
+          SOURCE_SHA256="$(sha256sum "$ARCHIVE" | awk '{print $1}')"
+
+          sed -i \
+            -e "s/^pkgver=.*/pkgver=${PACKAGE_VERSION}/" \
+            -e "s/^pkgrel=.*/pkgrel=1/" \
+            -e "s/^_tag=.*/_tag=${TAG}/" \
+            -e "s/^_commit=.*/_commit=${SHORT_SHA}/" \
+            -e "s/^sha256sums=.*/sha256sums=('${SOURCE_SHA256}')/" \
+            PKGBUILD
+
+      - name: Regenerate .SRCINFO
+        shell: bash
+        run: |
+          BUILD_DIR="$RUNNER_TEMP/package-metadata"
+          mkdir -p "$BUILD_DIR"
+          cp PKGBUILD "$BUILD_DIR/PKGBUILD"
+
+          docker run --rm \
+            --volume "$BUILD_DIR:/build" \
+            archlinux:base-devel \
+            bash -ceu '
+              useradd --create-home builder
+              chown -R builder:builder /build
+              runuser -u builder -- bash -c "cd /build && makepkg --printsrcinfo > .SRCINFO"
+            '
+
+          cp "$BUILD_DIR/.SRCINFO" .SRCINFO
+
+      - name: Commit package metadata
+        env:
+          TAG: ${{ steps.release.outputs.tag }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        shell: bash
+        run: |
+          if git diff --quiet -- PKGBUILD .SRCINFO; then
+            echo "Package metadata is already up to date."
+            exit 0
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add PKGBUILD .SRCINFO
+          git commit -m "chore(pkg): update package metadata for ${TAG} [skip actions]"
+          git push origin "HEAD:${DEFAULT_BRANCH}"
