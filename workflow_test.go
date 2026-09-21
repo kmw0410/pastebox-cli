@@ -51,8 +51,8 @@ func TestAutomatedReleaseWorkflowsHonorSkipActionsMarker(t *testing.T) {
 		".github/workflows/release.yml",
 	} {
 		workflow := readWorkflow(t, path)
-		if !strings.Contains(workflow, "[skip actions]") {
-			t.Errorf("%s does not honor the [skip actions] commit marker", path)
+		if !strings.Contains(workflow, "[skip ci]") {
+			t.Errorf("%s does not honor the [skip ci] commit marker", path)
 		}
 	}
 }
