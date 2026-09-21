@@ -92,19 +92,19 @@ jobs:
 
     steps:
       - name: Download Debian packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-deb-packages
           path: ${{ runner.temp }}/deb
 
       - name: Download Arch packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-arch-packages
           path: ${{ runner.temp }}/arch
 
       - name: Download RPM packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-rpm-packages
           path: ${{ runner.temp }}/rpm
