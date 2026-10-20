@@ -82,12 +82,19 @@ jobs:
     with:
       tag: ${{ needs.resolve.outputs.tag }}
 
+  void:
+    needs: resolve
+    uses: ./.github/workflows/void-package-build.yml
+    with:
+      tag: ${{ needs.resolve.outputs.tag }}
+
   collect:
     needs:
       - resolve
       - deb
       - arch
       - rpm
+      - void
     runs-on: ubuntu-latest
 
     steps:
@@ -109,6 +116,13 @@ jobs:
           name: pastebox-cli-rpm-packages
           path: ${{ runner.temp }}/rpm
 
+      - name: Download Void packages
+        uses: actions/download-artifact@v5
+        with:
+          pattern: pastebox-cli-void-*-packages
+          merge-multiple: true
+          path: ${{ runner.temp }}/void
+
       - name: Collect release packages
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
@@ -118,10 +132,11 @@ jobs:
           cp "$RUNNER_TEMP"/deb/*.deb dist/
           cp "$RUNNER_TEMP"/arch/*.pkg.tar.zst dist/
           cp "$RUNNER_TEMP"/rpm/*.rpm dist/
+          cp "$RUNNER_TEMP"/void/*.xbps dist/
           printf '%s\n' "$TAG" > dist/release-tag.txt
           (
             cd dist
-            sha256sum ./*.deb ./*.pkg.tar.zst ./*.rpm > checksums.txt
+            sha256sum ./*.deb ./*.pkg.tar.zst ./*.rpm ./*.xbps > checksums.txt
           )
 
       - name: Upload combined release artifact
@@ -132,6 +147,7 @@ jobs:
             dist/*.deb
             dist/*.pkg.tar.zst
             dist/*.rpm
+            dist/*.xbps
             dist/checksums.txt
             dist/release-tag.txt
           if-no-files-found: error

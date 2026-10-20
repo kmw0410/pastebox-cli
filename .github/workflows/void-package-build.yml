@@ -1,0 +1,147 @@
+name: Void Package Build
+
+on:
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to package as xbps
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - go_arch: amd64
+            void_arch: x86_64
+            runner: ubuntu-24.04
+          - go_arch: arm64
+            void_arch: aarch64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Validate and checkout release tag
+        env:
+          TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          git fetch --tags --force
+          if [[ ! "$TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
+            echo "Invalid tag input: $TAG" >&2
+            exit 1
+          fi
+          git rev-parse --verify "${TAG}^{commit}" >/dev/null
+          git checkout --detach "$TAG"
+
+      - name: Set up Go
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: false
+
+      - name: Run CLI tests
+        shell: bash
+        run: go test ./...
+
+      - name: Install nFPM
+        shell: bash
+        run: go install github.com/goreleaser/nfpm/v2/cmd/nfpm@v2.47.0
+
+      - name: Build package contents
+        env:
+          TAG: ${{ inputs.tag }}
+          GO_ARCH: ${{ matrix.go_arch }}
+        shell: bash
+        run: |
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+          NORMALIZED_VERSION="${TAG#v}"
+          NORMALIZED_VERSION="${NORMALIZED_VERSION//-/.}"
+          mkdir -p dist/build
+          BINARY="$PWD/dist/build/pb"
+
+          CGO_ENABLED=0 GOOS=linux GOARCH="$GO_ARCH" go build \
+            -trimpath \
+            -ldflags "-s -w -X main.version=${TAG} -X main.commit=${SHORT_SHA}" \
+            -o "$BINARY" .
+
+          # nFPM has no XBPS packager. Reuse its shared file manifest via
+          # a temporary Debian archive, then package the payload with XBPS.
+          PACKAGE_ARCH="$GO_ARCH" \
+          PACKAGE_VERSION="$NORMALIZED_VERSION" \
+          PACKAGE_BINARY="$BINARY" \
+            nfpm package \
+              --config packaging/nfpm.yaml \
+              --packager deb \
+              --target dist/build/payload.deb
+          dpkg-deb --extract dist/build/payload.deb dist/build/root
+
+      - name: Build and verify Void packages
+        env:
+          TAG: ${{ inputs.tag }}
+          VOID_ARCH: ${{ matrix.void_arch }}
+          GO_ARCH: ${{ matrix.go_arch }}
+        shell: bash
+        run: |
+          NORMALIZED_VERSION="${TAG#v}"
+          NORMALIZED_VERSION="${NORMALIZED_VERSION//-/.}"
+          SHORT_SHA="$(git rev-parse --short HEAD)"
+
+          for LIBC in glibc musl; do
+            TARGET_ARCH="$VOID_ARCH"
+            if [ "$LIBC" = musl ]; then
+              TARGET_ARCH="${VOID_ARCH}-musl"
+            fi
+            docker run --rm \
+              --platform "linux/$GO_ARCH" \
+              -v "$PWD/dist:/dist" \
+              -w /dist \
+              -e TAG -e "SHORT_SHA=$SHORT_SHA" \
+              -e "TARGET_ARCH=$TARGET_ARCH" \
+              -e "NORMALIZED_VERSION=$NORMALIZED_VERSION" \
+              "ghcr.io/void-linux/void-${LIBC}-full:latest" \
+              sh -eu -c '
+                chown -R 0:0 /dist/build/root
+                xbps-create \
+                  -A "$TARGET_ARCH" \
+                  -n "pastebox-cli-${NORMALIZED_VERSION}_1" \
+                  -s "Terminal client for the Pastebox text sharing service" \
+                  -m "kmw_" -l MIT \
+                  -H "https://github.com/kmw0410/pastebox-cli" \
+                  /dist/build/root
+                PACKAGE="/dist/pastebox-cli-${NORMALIZED_VERSION}_1.${TARGET_ARCH}.xbps"
+                xbps-rindex -a "$PACKAGE"
+                xbps-install -y -i -R /dist "pastebox-cli-${NORMALIZED_VERSION}_1"
+                test "$(xbps-query -p architecture pastebox-cli)" = "$TARGET_ARCH"
+                test -x /usr/bin/pb
+                test -f /usr/share/doc/pastebox-cli/LICENSE
+                test -f /usr/share/doc/pastebox-cli/package.md
+                test -f /usr/share/doc/pastebox-cli/package_ko.md
+                pb version > /tmp/pb-version.txt
+                grep -F "$TAG" /tmp/pb-version.txt
+                grep -F "$SHORT_SHA" /tmp/pb-version.txt
+              '
+          done
+
+      - name: Upload Void package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: pastebox-cli-void-${{ matrix.void_arch }}-packages
+          path: dist/*.xbps
+          if-no-files-found: error
+          retention-days: 7
