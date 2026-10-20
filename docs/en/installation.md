@@ -23,3 +23,21 @@ publication is paused.
 
 For complete package installation, verification, and removal instructions, see
 [package.md](../../package.md).
+
+## Nix
+
+The repository provides a flake for `x86_64-linux` and `aarch64-linux`.
+Enable the Nix `nix-command` and `flakes` experimental features, then run:
+
+```bash
+nix run github:kmw0410/pastebox-cli -- version
+nix profile add github:kmw0410/pastebox-cli#pastebox-cli
+```
+
+From a local checkout, build with `nix build .#pastebox-cli` and run
+`./result/bin/pb version`. When developing, Git-based flakes require new Nix
+files to be tracked; `nix build path:.#pastebox-cli` also includes untracked files.
+Nix installs the command in the Nix store and exposes `pb` through your profile.
+Manage this installation with Nix rather than `pb update`.
+
+See [Nix packaging](./packaging.md#nix) for dependency and version maintenance.

@@ -21,3 +21,22 @@ AUR 게시가 일시 중단되어 Arch Linux 계열의 자동 업데이트는 �
 
 패키지 설치, 검증, 제거의 전체 절차는 [package_ko.md](../../package_ko.md)를
 참조합니다.
+
+## Nix
+
+저장소에서 `x86_64-linux`와 `aarch64-linux`용 flake를 제공합니다.
+Nix의 `nix-command`, `flakes` 실험적 기능을 활성화한 뒤 실행합니다.
+
+```bash
+nix run github:kmw0410/pastebox-cli -- version
+nix profile add github:kmw0410/pastebox-cli#pastebox-cli
+```
+
+로컬 저장소에서는 `nix build .#pastebox-cli`로 빌드하고
+`./result/bin/pb version`으로 실행합니다. 개발 중 Git 기반 flake를 사용하려면
+새 Nix 파일이 Git 추적 대상이어야 합니다. `nix build path:.#pastebox-cli`는
+추적되지 않은 파일도 포함합니다.
+Nix는 Nix store에 설치하고 프로필을 통해 `pb` 명령을 제공합니다.
+이 설치본은 `pb update` 대신 Nix로 관리합니다.
+
+의존성과 버전 관리 방법은 [Nix 패키징](./packaging.md#nix)을 참조합니다.

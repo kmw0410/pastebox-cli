@@ -1,5 +1,33 @@
 # Packaging
 
+## Nix
+
+The root `package.nix` uses `buildGo126Module`; `flake.nix` exposes it as
+`packages.<system>.pastebox-cli` and the default package/application.
+`flake.lock` pins nixpkgs. The Nix Build workflow builds and tests both supported
+Linux architectures on native runners, including `pb version` after installation.
+
+The flake uses a source-date development version and the Git revision when
+available. Release builders can override `version` with the original release tag
+and `revision` with the release commit when calling `package.nix`; both values
+are injected into `pb version`. A plain path source has no Git revision and
+reports `unknown`.
+
+After changing Go dependencies, recalculate `vendorHash` in `package.nix`:
+temporarily set it to `lib.fakeHash`, run `nix build .#pastebox-cli`, and replace
+it with the actual hash from Nix's mismatch error. Never commit the placeholder.
+Update nixpkgs deliberately with `nix flake update nixpkgs`, then run:
+
+```bash
+nix flake check --no-update-lock-file --print-build-logs
+nix build .#pastebox-cli --no-update-lock-file
+nix run . --no-update-lock-file -- version
+```
+
+Nix uses its own package definition and store paths; nFPM continues to define
+the distribution archive packages. No nixpkgs registration or binary cache
+publication is performed by this workflow.
+
 ## AUR
 
 The repository-root `PKGBUILD` and `.SRCINFO` define the source-based AUR

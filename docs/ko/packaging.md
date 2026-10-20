@@ -1,5 +1,32 @@
 # 패키징
 
+## Nix
+
+루트 `package.nix`는 `buildGo126Module`을 사용하며, `flake.nix`에서
+`packages.<system>.pastebox-cli`와 기본 패키지·앱으로 제공합니다.
+`flake.lock`으로 nixpkgs를 고정합니다. Nix Build 워크플로는 지원하는 두 Linux
+아키텍처의 네이티브 러너에서 빌드·테스트하고 설치 후 `pb version`도 확인합니다.
+
+flake는 소스 날짜 기반 개발 버전과 가능한 경우 Git 리비전을 사용합니다.
+릴리스 빌드에서는 `package.nix`를 호출할 때 `version`에 원래 릴리스 태그,
+`revision`에 릴리스 커밋을 전달할 수 있습니다. 두 값은 `pb version`에
+주입됩니다. 일반 경로 소스에는 Git 리비전이 없어 `unknown`으로 표시됩니다.
+
+Go 의존성을 변경하면 `package.nix`의 `vendorHash`도 다시 계산합니다.
+잠시 `lib.fakeHash`로 설정하고 `nix build .#pastebox-cli`를 실행한 뒤,
+Nix 해시 불일치 오류의 실제 해시로 교체합니다. 임시 해시는 커밋하지 않습니다.
+nixpkgs는 `nix flake update nixpkgs`로 명시적으로 갱신하고 다음을 실행합니다.
+
+```bash
+nix flake check --no-update-lock-file --print-build-logs
+nix build .#pastebox-cli --no-update-lock-file
+nix run . --no-update-lock-file -- version
+```
+
+Nix는 자체 패키지 정의와 store 경로를 사용하며, 배포판 아카이브 패키지는
+계속 nFPM으로 정의합니다. 이 워크플로는 nixpkgs 등록이나 바이너리 캐시
+게시를 수행하지 않습니다.
+
 ## AUR
 
 저장소 루트의 `PKGBUILD`와 `.SRCINFO`는 소스 기반 AUR 패키지를 정의합니다. 새

@@ -1,0 +1,54 @@
+name: Nix Build
+
+on:
+  push:
+    paths:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+      - "*.nix"
+      - flake.lock
+      - package.md
+      - package_ko.md
+      - LICENSE
+      - .github/workflows/**
+  pull_request:
+    paths:
+      - "**/*.go"
+      - go.mod
+      - go.sum
+      - "*.nix"
+      - flake.lock
+      - package.md
+      - package_ko.md
+      - LICENSE
+      - .github/workflows/**
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check flake and run package tests
+        run: nix flake check --no-update-lock-file --print-build-logs
+
+      - name: Build package
+        run: nix build .#pastebox-cli --no-update-lock-file --print-build-logs
+
+      - name: Verify default application
+        run: nix run . --no-update-lock-file -- version
