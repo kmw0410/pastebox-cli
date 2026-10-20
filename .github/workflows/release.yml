@@ -29,14 +29,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
 
       - name: Download CLI packages from workflow_run
         if: github.event_name == 'workflow_run'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-packages
           path: ${{ runner.temp }}/pastebox-cli-packages
@@ -45,7 +45,7 @@ jobs:
 
       - name: Download CLI packages from workflow_dispatch
         if: github.event_name == 'workflow_dispatch'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-packages
           path: ${{ runner.temp }}/pastebox-cli-packages
@@ -135,7 +135,7 @@ jobs:
             --notes-file release-notes.md
 
       - name: Upload release metadata
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pastebox-cli-release-metadata
           path: ${{ runner.temp }}/pastebox-cli-packages/release-tag.txt

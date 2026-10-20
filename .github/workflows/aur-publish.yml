@@ -36,14 +36,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event.repository.default_branch }}
 
       - name: Download release metadata
         if: github.event_name == 'workflow_run'
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-release-metadata
           path: ${{ runner.temp }}/pastebox-cli-release-metadata

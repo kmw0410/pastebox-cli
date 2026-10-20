@@ -33,7 +33,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
@@ -99,19 +99,19 @@ jobs:
 
     steps:
       - name: Download Debian packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-deb-packages
           path: ${{ runner.temp }}/deb
 
       - name: Download Arch packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-arch-packages
           path: ${{ runner.temp }}/arch
 
       - name: Download RPM packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@v8
         with:
           name: pastebox-cli-rpm-packages
           path: ${{ runner.temp }}/rpm
@@ -140,7 +140,7 @@ jobs:
           )
 
       - name: Upload combined release artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: pastebox-cli-packages
           path: |
