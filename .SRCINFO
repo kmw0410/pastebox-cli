@@ -1,13 +1,13 @@
 pkgbase = pastebox-cli
 	pkgdesc = Lightweight command-line client for self-hosted Pastebox servers
-	pkgver = 26.10.20
+	pkgver = 26.10.23
 	pkgrel = 1
 	url = https://github.com/kmw0410/pastebox-cli
 	arch = x86_64
 	arch = aarch64
 	license = MIT
 	makedepends = go>=1.26.10
-	source = pastebox-cli-26.10.20.tar.gz::https://github.com/kmw0410/pastebox-cli/archive/refs/tags/v26.10.20.tar.gz
-	sha256sums = 3413f448dde5a06aa964cecf40b55346a3dbbb0b8e2a2e945d318f9f089e7ab9
+	source = pastebox-cli-26.10.23.tar.gz::https://github.com/kmw0410/pastebox-cli/archive/refs/tags/v26.10.23.tar.gz
+	sha256sums = 89dcce0a5020f447076653b47f07c7515a62c46f94be8a48b7f657bf6f97dcfb
 
 pkgname = pastebox-cli
