@@ -16,6 +16,8 @@ func TestReleaseBuildRunsQualityChecksForPushAndPullRequest(t *testing.T) {
 		"unformatted=\"$(gofmt -l .)\"",
 		"go vet ./...",
 		"go test ./...",
+		"go install golang.org/x/vuln/cmd/govulncheck@v1.9.0",
+		"run: govulncheck ./...",
 		"permissions:\n  contents: read",
 	} {
 		if !strings.Contains(workflow, want) {

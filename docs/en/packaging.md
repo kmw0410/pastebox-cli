@@ -2,7 +2,7 @@
 
 ## Nix
 
-The root `package.nix` uses `buildGo126Module`; `flake.nix` exposes it as
+The root `package.nix` uses `buildGo127Module`; `flake.nix` exposes it as
 `packages.<system>.pastebox-cli` and the default package/application.
 `flake.lock` pins nixpkgs. The Nix Build workflow builds and tests both supported
 Linux architectures on native runners, including `pb version` after installation.

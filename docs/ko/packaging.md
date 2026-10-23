@@ -2,7 +2,7 @@
 
 ## Nix
 
-루트 `package.nix`는 `buildGo126Module`을 사용하며, `flake.nix`에서
+루트 `package.nix`는 `buildGo127Module`을 사용하며, `flake.nix`에서
 `packages.<system>.pastebox-cli`와 기본 패키지·앱으로 제공합니다.
 `flake.lock`으로 nixpkgs를 고정합니다. Nix Build 워크플로는 지원하는 두 Linux
 아키텍처의 네이티브 러너에서 빌드·테스트하고 설치 후 `pb version`도 확인합니다.

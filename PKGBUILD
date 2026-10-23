@@ -5,7 +5,7 @@ pkgdesc="Lightweight command-line client for self-hosted Pastebox servers"
 arch=('x86_64' 'aarch64')
 url="https://github.com/kmw0410/pastebox-cli"
 license=('MIT')
-makedepends=('go>=1.26.4')
+makedepends=('go>=1.26.10')
 _tag=v26.09.20-1
 _commit=a323b9f
 source=("${pkgname}-${pkgver}.tar.gz::${url}/archive/refs/tags/${_tag}.tar.gz")

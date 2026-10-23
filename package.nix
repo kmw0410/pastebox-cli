@@ -1,11 +1,11 @@
 {
   lib,
-  buildGo126Module,
+  buildGo127Module,
   version ? "dev",
   revision ? "unknown",
 }:
 
-buildGo126Module {
+buildGo127Module {
   pname = "pastebox-cli";
   inherit version;
 

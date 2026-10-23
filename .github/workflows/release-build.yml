@@ -60,6 +60,14 @@ jobs:
         shell: bash
         run: go test ./...
 
+      - name: Install govulncheck
+        shell: bash
+        run: go install golang.org/x/vuln/cmd/govulncheck@v1.9.0
+
+      - name: Check vulnerabilities
+        shell: bash
+        run: govulncheck ./...
+
   tag:
     if: >
       github.event_name == 'workflow_dispatch' ||
