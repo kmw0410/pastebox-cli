@@ -39,6 +39,9 @@ buildGo127Module {
     mv "$out/bin/pastebox-cli" "$out/bin/pb"
     install -Dm644 LICENSE "$out/share/doc/pastebox-cli/LICENSE"
     install -m644 package.md package_ko.md "$out/share/doc/pastebox-cli/"
+    install -Dm644 packaging/completions/pb.bash "$out/share/bash-completion/completions/pb"
+    install -Dm644 packaging/completions/_pb "$out/share/zsh/site-functions/_pb"
+    install -Dm644 packaging/completions/pb.fish "$out/share/fish/vendor_completions.d/pb.fish"
   '';
 
   doInstallCheck = true;
@@ -46,6 +49,12 @@ buildGo127Module {
     runHook preInstallCheck
     "$out/bin/pb" version > version-output.txt
     grep -Fx ${lib.escapeShellArg "pb ${version} (commit ${revision})"} version-output.txt
+    "$out/bin/pb" completion bash > bash-completion.txt
+    cmp bash-completion.txt "$out/share/bash-completion/completions/pb"
+    "$out/bin/pb" completion zsh > zsh-completion.txt
+    cmp zsh-completion.txt "$out/share/zsh/site-functions/_pb"
+    "$out/bin/pb" completion fish > fish-completion.txt
+    cmp fish-completion.txt "$out/share/fish/vendor_completions.d/pb.fish"
     runHook postInstallCheck
   '';
 

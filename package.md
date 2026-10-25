@@ -248,6 +248,16 @@ not have a whole-request timeout that would interrupt large streaming inputs.
 
 ## Shell completion
 
+Distribution packages include Bash, Zsh, and Fish completions at:
+
+- `/usr/share/bash-completion/completions/pb`
+- `/usr/share/zsh/site-functions/_pb`
+- `/usr/share/fish/vendor_completions.d/pb.fish`
+
+Enable your shell's completion support and restart it. Manual script setup is
+only needed for a binary installed without these package files.
+
+
 Print the static completion script for your shell and append it to the shell's
 startup file. Restart the shell or source the file after adding it.
 

@@ -22,3 +22,9 @@ contents:
     dst: /usr/share/doc/pastebox-cli/package.md
   - src: ./package_ko.md
     dst: /usr/share/doc/pastebox-cli/package_ko.md
+  - src: ./packaging/completions/pb.bash
+    dst: /usr/share/bash-completion/completions/pb
+  - src: ./packaging/completions/_pb
+    dst: /usr/share/zsh/site-functions/_pb
+  - src: ./packaging/completions/pb.fish
+    dst: /usr/share/fish/vendor_completions.d/pb.fish

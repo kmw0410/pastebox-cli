@@ -246,6 +246,16 @@ pb completion --help
 
 ## 셸 자동 완성
 
+배포판 패키지는 다음 경로에 Bash·Zsh·Fish 자동 완성 파일을 포함합니다.
+
+- `/usr/share/bash-completion/completions/pb`
+- `/usr/share/zsh/site-functions/_pb`
+- `/usr/share/fish/vendor_completions.d/pb.fish`
+
+셸의 자동 완성 기능을 활성화하고 셸을 다시 시작합니다. 자동 완성 파일 없이
+바이너리만 설치한 경우에 아래 스크립트 설정을 사용합니다.
+
+
 사용 중인 셸용 정적 자동 완성 스크립트를 출력하여 셸의 시작 파일에
 추가합니다. 추가한 뒤에는 셸을 다시 시작하거나 파일을 source 하세요.
 

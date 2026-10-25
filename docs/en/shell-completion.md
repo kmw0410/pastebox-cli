@@ -1,5 +1,10 @@
 # Shell completion
 
+DEB, Arch, RPM, and Void packages install Bash, Zsh, and Fish completion files
+under `/usr/share/`. Nix installs the same files below its package's `share/`
+directory. With the shell's completion support enabled, restart the shell to
+load them; do not also append the scripts to startup files.
+
 Print the completion script for the current shell and append it to that shell's
 startup file. Restart the shell or source the file afterwards.
 

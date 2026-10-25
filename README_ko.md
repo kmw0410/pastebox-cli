@@ -17,6 +17,7 @@ pastebox-cli/
 │   ├── ko/               # 한국어 문서
 │   └── README.md
 ├── packaging/
+│   ├── completions/
 │   └── nfpm.yaml
 ├── AGENTS.md
 ├── PKGBUILD

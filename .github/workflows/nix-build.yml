@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - "**/*.go"
+      - "packaging/completions/**"
       - go.mod
       - go.sum
       - "*.nix"
@@ -15,6 +16,7 @@ on:
   pull_request:
     paths:
       - "**/*.go"
+      - "packaging/completions/**"
       - go.mod
       - go.sum
       - "*.nix"

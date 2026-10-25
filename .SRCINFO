@@ -1,7 +1,7 @@
 pkgbase = pastebox-cli
 	pkgdesc = Lightweight command-line client for self-hosted Pastebox servers
 	pkgver = 26.10.20
-	pkgrel = 1
+	pkgrel = 2
 	url = https://github.com/kmw0410/pastebox-cli
 	arch = x86_64
 	arch = aarch64
