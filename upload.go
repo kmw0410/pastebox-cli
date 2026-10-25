@@ -119,7 +119,7 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 	}
 	resp, err := redirectClient.Do(req)
 	if err != nil {
-		return uploadResponse{}, nil, fmt.Errorf("request failed for %s: %w", cfg.ServerURL, err)
+		return uploadResponse{}, nil, requestError(err)
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
@@ -127,37 +127,24 @@ func upload(ctx context.Context, client *http.Client, cfg config, input io.Reade
 		return uploadResponse{}, nil, fmt.Errorf("read upload response: %w", err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return uploadResponse{}, nil, responseError("upload failed", resp, raw)
+		return uploadResponse{}, nil, responseError("upload failed", resp)
 	}
 
+	return decodeUploadResponse(raw, opts, "upload")
+}
+
+func decodeUploadResponse(raw []byte, opts uploadOptions, operation string) (uploadResponse, []byte, error) {
 	var result uploadResponse
 	if err := json.Unmarshal(raw, &result); err != nil {
-		return uploadResponse{}, nil, fmt.Errorf("invalid upload response from server: %w", err)
+		return uploadResponse{}, nil, fmt.Errorf("invalid %s response from server: expected upload JSON", operation)
 	}
 	if strings.TrimSpace(result.URL) == "" {
-		return uploadResponse{}, nil, fmt.Errorf("invalid upload response from server: missing url")
+		return uploadResponse{}, nil, fmt.Errorf("invalid %s response from server: missing url", operation)
 	}
 	if opts.newPassword != "" && (result.PasswordProtected == nil || !*result.PasswordProtected) {
 		return uploadResponse{}, nil, fmt.Errorf("server did not confirm password protection; update the Pastebox server before using --password")
 	}
 	return result, raw, nil
-}
-
-func responseError(prefix string, resp *http.Response, body []byte) error {
-	message := ""
-	var payload struct {
-		Error string `json:"error"`
-	}
-	if json.Unmarshal(body, &payload) == nil {
-		message = strings.TrimSpace(payload.Error)
-	}
-	if message == "" {
-		message = strings.TrimSpace(string(body))
-	}
-	if message == "" {
-		message = http.StatusText(resp.StatusCode)
-	}
-	return fmt.Errorf("%s: %s (HTTP %d)", prefix, message, resp.StatusCode)
 }
 
 func addRawQuery(target string) (string, error) {

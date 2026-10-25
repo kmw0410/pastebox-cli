@@ -148,7 +148,7 @@ func TestRunUploadServerError(t *testing.T) {
 	if code := app.run(nil); code != 1 {
 		t.Fatalf("exit = %d", code)
 	}
-	if got := stderr.String(); !strings.Contains(got, "code already exists") || !strings.Contains(got, "HTTP 409") {
+	if got := stderr.String(); !strings.Contains(got, "Conflict") || !strings.Contains(got, "HTTP 409") {
 		t.Fatalf("stderr = %q", got)
 	}
 }

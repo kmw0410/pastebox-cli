@@ -297,3 +297,6 @@ sudo dnf remove pastebox-cli
 ```
 
 Package removal does not delete `~/.config/pastebox/config.json`.
+
+HTTP failure diagnostics use standard status descriptions and omit server error
+bodies and raw transport errors, which may contain paste contents or secrets.

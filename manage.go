@@ -141,7 +141,7 @@ func requestManagedPaste(ctx context.Context, client *http.Client, cfg config, m
 		return managedPaste{}, fmt.Errorf("read manage response: %w", err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return managedPaste{}, responseError("manage failed", resp, responseBody)
+		return managedPaste{}, responseError("manage failed", resp)
 	}
 	var result managedPaste
 	if err := json.Unmarshal(responseBody, &result); err != nil || strings.TrimSpace(result.ID) == "" {
@@ -159,7 +159,7 @@ func doManagedRequest(client *http.Client, serverURL, token string, req *http.Re
 	}
 	resp, err := redirectClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("manage request failed for %s: %w", serverURL, err)
+		return nil, requestError(err)
 	}
 	return resp, nil
 }

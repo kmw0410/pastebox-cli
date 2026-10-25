@@ -295,3 +295,6 @@ sudo dnf remove pastebox-cli
 ```
 
 패키지를 제거해도 `~/.config/pastebox/config.json`은 삭제하지 않습니다.
+
+HTTP 오류 진단은 표준 상태 설명을 사용하며, Paste 내용이나 비밀정보가 포함될 수
+있는 서버 오류 본문과 원본 통신 오류는 출력하지 않습니다.

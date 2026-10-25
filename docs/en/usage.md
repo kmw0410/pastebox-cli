@@ -25,3 +25,7 @@ pb manage show AbC123
 is sent in an HTTP header and is not placed in command arguments.
 
 Run `pb <command> --help` for command-specific options.
+
+HTTP failures report the status code and its standard description. Server error
+bodies and raw transport errors are omitted to keep paste contents and secrets
+out of diagnostics.

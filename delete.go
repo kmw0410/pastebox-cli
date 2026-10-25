@@ -69,7 +69,7 @@ func deletePaste(ctx context.Context, client *http.Client, cfg config, code, tok
 	}
 	resp, err := redirectClient.Do(req)
 	if err != nil {
-		return fmt.Errorf("delete request failed for %s: %w", cfg.ServerURL, err)
+		return requestError(err)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(io.LimitReader(resp.Body, 64<<10))
@@ -77,7 +77,7 @@ func deletePaste(ctx context.Context, client *http.Client, cfg config, code, tok
 		return fmt.Errorf("read delete response: %w", err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return responseError("delete failed", resp, body)
+		return responseError("delete failed", resp)
 	}
 	var result struct {
 		Deleted bool `json:"deleted"`

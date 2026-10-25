@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -52,7 +51,7 @@ func clonePaste(ctx context.Context, client *http.Client, cfg config, target, so
 	}
 	resp, err := redirectClient.Do(req)
 	if err != nil {
-		return uploadResponse{}, nil, fmt.Errorf("clone request failed for %s: %w", cfg.ServerURL, err)
+		return uploadResponse{}, nil, requestError(err)
 	}
 	defer resp.Body.Close()
 	raw, err := io.ReadAll(io.LimitReader(resp.Body, 1<<20))
@@ -60,20 +59,10 @@ func clonePaste(ctx context.Context, client *http.Client, cfg config, target, so
 		return uploadResponse{}, nil, fmt.Errorf("read clone response: %w", err)
 	}
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
-		return uploadResponse{}, nil, responseError("clone failed", resp, raw)
+		return uploadResponse{}, nil, responseError("clone failed", resp)
 	}
 
-	var result uploadResponse
-	if err := json.Unmarshal(raw, &result); err != nil {
-		return uploadResponse{}, nil, fmt.Errorf("invalid clone response from server: %w", err)
-	}
-	if result.URL == "" {
-		return uploadResponse{}, nil, fmt.Errorf("invalid clone response from server: missing url")
-	}
-	if opts.newPassword != "" && (result.PasswordProtected == nil || !*result.PasswordProtected) {
-		return uploadResponse{}, nil, fmt.Errorf("server did not confirm password protection; update the Pastebox server before using --password")
-	}
-	return result, raw, nil
+	return decodeUploadResponse(raw, opts, "clone")
 }
 
 func addFormatQuery(target string) (string, error) {
