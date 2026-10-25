@@ -88,3 +88,22 @@ func readWorkflow(t *testing.T, path string) string {
 	}
 	return string(data)
 }
+
+func TestWorkflowChangesAreCheckedWithoutCreatingReleases(t *testing.T) {
+	workflow := readWorkflow(t, ".github/workflows/quality-checks.yml")
+	for _, event := range []string{"push", "pull_request"} {
+		if !strings.Contains(workflow, event+":\n    paths:\n      - \".github/**\"\n      - \"**/*_test.go\"") {
+			t.Errorf("%s changes are not validated", event)
+		}
+	}
+	for _, want := range []string{"workflow_dispatch:", "contents: read", "go-version-file: go.mod", "go vet ./...", "go test ./...", "actionlint@v1.7.12", "run: actionlint"} {
+		if !strings.Contains(workflow, want) {
+			t.Errorf("quality workflow is missing %q", want)
+		}
+	}
+	for _, forbidden := range []string{"contents: write", "git tag", "git push", "gh release"} {
+		if strings.Contains(workflow, forbidden) {
+			t.Errorf("quality workflow contains release operation %q", forbidden)
+		}
+	}
+}

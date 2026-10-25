@@ -52,3 +52,10 @@ makepkg --verifysource
 makepkg --cleanbuild
 namcap PKGBUILD
 ```
+
+## Workflow validation
+
+`quality-checks.yml` validates GitHub configuration and test-only changes on
+pushes and pull requests, including actionlint and the Go workflow assertions.
+It has read-only permissions and does not create releases. The existing release
+workflow keeps its metadata exclusions and quality gate before tagging.

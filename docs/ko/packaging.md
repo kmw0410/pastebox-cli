@@ -51,3 +51,10 @@ makepkg --verifysource
 makepkg --cleanbuild
 namcap PKGBUILD
 ```
+
+## 워크플로 검증
+
+`quality-checks.yml`은 GitHub 설정 및 테스트 파일 변경 시 push와 pull request에서
+actionlint와 Go 워크플로 검증 테스트를 실행합니다. 읽기 전용 권한을 사용하며
+릴리스를 생성하지 않습니다. 기존 릴리스 워크플로의 메타데이터 제외 조건과
+태그 생성 전 품질 검증은 유지합니다.
