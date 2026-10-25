@@ -7,6 +7,8 @@ GitHub Releases provide Linux packages for Pastebox CLI.
 | Debian / Ubuntu | `amd64.deb` | `arm64.deb` |
 | Arch Linux family | `x86_64.pkg.tar.zst` | `aarch64.pkg.tar.zst` |
 | RHEL family | `x86_64.rpm` | Not provided |
+| Void (glibc) | `x86_64.xbps` | `aarch64.xbps` |
+| Void (musl) | `x86_64-musl.xbps` | `aarch64-musl.xbps` |
 
 Download the matching release package and install it with the native package
 manager.

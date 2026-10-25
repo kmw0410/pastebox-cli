@@ -11,6 +11,8 @@ GitHub Release에서 다음 Linux 패키지를 제공합니다.
 | Debian / Ubuntu | `amd64.deb` | `arm64.deb` |
 | Arch Linux 계열 | `x86_64.pkg.tar.zst` | `aarch64.pkg.tar.zst` |
 | RHEL 계열 | `x86_64.rpm` | 제공하지 않음 |
+| Void (glibc) | `x86_64.xbps` | `aarch64.xbps` |
+| Void (musl) | `x86_64-musl.xbps` | `aarch64-musl.xbps` |
 
 ## 설치
 

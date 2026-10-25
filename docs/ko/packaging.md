@@ -27,6 +27,13 @@ Nix는 자체 패키지 정의와 store 경로를 사용하며, 배포판 아카
 계속 nFPM으로 정의합니다. 이 워크플로는 nixpkgs 등록이나 바이너리 캐시
 게시를 수행하지 않습니다.
 
+## Void Linux
+
+`void-package-build.yml`은 `x86_64`와 `aarch64` 네이티브 환경에서 glibc·musl용
+XBPS 패키지를 생성합니다. `packaging/nfpm.yaml`로 임시 DEB 페이로드를 만든 뒤
+Void 컨테이너에서 XBPS 패키지를 생성하고 설치합니다. 통합 릴리스 워크플로는
+네 가지 XBPS 파일을 체크섬에 포함합니다.
+
 ## AUR
 
 저장소 루트의 `PKGBUILD`와 `.SRCINFO`는 소스 기반 AUR 패키지를 정의합니다. 새

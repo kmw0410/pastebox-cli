@@ -25,50 +25,97 @@ This tree lists the tracked files that define the current project. `WORK.md` is 
 ```text
 pastebox-cli/
 ├── .github/
-│   └── workflows/
-│       ├── arch-package-build.yml
-│       ├── aur-publish.yml
-│       ├── cli-package-build.yml
-│       ├── deb-package-build.yml
-│       ├── release-build.yml
-│       ├── release.yml
-│       └── rpm-package-build.yml
-├── .gitignore
+│   ├── workflows/
+│   │   ├── arch-package-build.yml
+│   │   ├── aur-publish.yml
+│   │   ├── cli-package-build.yml
+│   │   ├── deb-package-build.yml
+│   │   ├── nix-build.yml
+│   │   ├── package-metadata-update.yml
+│   │   ├── quality-checks.yml
+│   │   ├── release-build.yml
+│   │   ├── release.yml
+│   │   ├── rpm-package-build.yml
+│   │   └── void-package-build.yml
+│   └── dependabot.yml
+├── docs/
+│   ├── en/
+│   │   ├── configuration.md
+│   │   ├── installation.md
+│   │   ├── packaging.md
+│   │   ├── shell-completion.md
+│   │   └── usage.md
+│   ├── ko/
+│   │   ├── configuration.md
+│   │   ├── installation.md
+│   │   ├── packaging.md
+│   │   ├── shell-completion.md
+│   │   └── usage.md
+│   └── README.md
+├── packaging/
+│   ├── completions/
+│   │   ├── _pb
+│   │   ├── pb.bash
+│   │   └── pb.fish
+│   └── nfpm.yaml
 ├── .SRCINFO
+├── .gitignore
 ├── AGENTS.md
 ├── LICENSE
 ├── PKGBUILD
 ├── README.md
 ├── README_ko.md
-├── config.json
+├── clone.go
+├── clone_test.go
+├── completion.go
 ├── config.go
+├── config.json
 ├── config_test.go
+├── delete.go
+├── delete_test.go
+├── flake.lock
+├── flake.nix
 ├── get.go
 ├── get_test.go
 ├── go.mod
+├── go.sum
+├── http.go
+├── http_test.go
 ├── main.go
 ├── main_test.go
+├── manage.go
+├── manage_test.go
 ├── output.go
 ├── package.md
+├── package.nix
 ├── package_ko.md
+├── password_prompt.go
+├── password_prompt_test.go
+├── update.go
+├── update_test.go
 ├── upload.go
 ├── upload_test.go
-├── workflow_test.go
-└── packaging/
-    └── nfpm.yaml
+└── workflow_test.go
 ```
 
 ## 3. Architecture
 
 - `main.go` owns command dispatch, argument parsing, help and version output, request cancellation, HTTP client construction, and exit codes.
 - `config.go` owns config bootstrap, loading, validation, atomic writes, and URL normalization.
-- `upload.go` owns multipart file uploads, raw stdin streaming, upload headers, and HTTP error mapping.
-- `get.go` owns raw paste retrieval, password headers, target validation, and redirect restrictions.
+- `upload.go` owns multipart file uploads, raw stdin streaming, upload headers, and shared upload/clone response validation.
+- `get.go` owns raw paste retrieval, password headers, and public target validation.
+- `http.go` owns shared redirect restrictions and secret-safe HTTP failure diagnostics.
+- `clone.go` owns server-side paste cloning through the public HTTP API.
+- `delete.go` and `manage.go` own token-based deletion and metadata management.
+- `password_prompt.go` owns hidden terminal prompts and password validation.
+- `update.go` owns verified DEB/RPM updates and package-specific AUR helper updates.
+- `completion.go` embeds the scripts from `packaging/completions/` and serves shell completion output.
 - `output.go` owns human-readable, quiet, and JSON upload output.
 - `*_test.go` files test the standalone CLI with local HTTP servers and repository-file assertions.
-- `packaging/nfpm.yaml` defines Debian, Arch, and RPM package metadata and installed paths.
-- Root `PKGBUILD` and `.SRCINFO` define the source-based AUR package; both README variants document its maintenance workflow.
-- `.github/workflows/` contains quality checks, tag creation, distribution package builds, GitHub Release creation, and AUR publication.
+- `packaging/nfpm.yaml` defines Debian, Arch, and RPM package metadata and the shared payload used by Void XBPS builds.
+- `package.nix`, `flake.nix`, and `flake.lock` define pinned static Linux Nix packages and installation checks.
+- Root `PKGBUILD` and `.SRCINFO` define the source-based AUR package; language-specific packaging pages document its maintenance workflow.
+- `.github/workflows/` contains independent workflow/test checks, release quality gates, tag creation, distribution package builds, Nix checks, GitHub Release creation, and AUR publication.
 
 ## 4. Required Work Sequence
 
@@ -113,15 +160,20 @@ The primary usage list MUST match `main.go`:
 
 ```text
 pb [options] [file|-]
-pb get [--password PASSWORD] <code|url>
+pb show [--password] <code|url>
+pb clone [options] <code|url>
+pb delete <code|delete-url>
+pb manage <command> [arguments]
 pb config show
 pb config set server <URL>
 pb config validate
+pb update
+pb completion <zsh|bash|fish>
 pb version
 ```
 
 - Preserve `pb help`, `pb --help`, `pb -h`, and `pb --version` aliases implemented by command dispatch.
-- Preserve `pb get --help`, `pb get -h`, `pb config --help`, and `pb config -h`.
+- Preserve command-specific `--help` and `-h` for `show`, `clone`, `delete`, `manage`, `config`, `update`, and `completion`.
 - Do not document an unimplemented command as supported.
 - When a public command, option, argument order, or usage string changes, update the usage text and both language variants of the affected documentation in the same task.
 
@@ -142,13 +194,23 @@ Do not merge argument or configuration failures into the network/server failure 
 - `--permanent`, `--once`, and `--expires` MUST remain mutually exclusive.
 - `--quiet` and `--json` MUST remain mutually exclusive.
 
+### Passwords and management
+
+- `--password` is a boolean flag that prompts on the controlling terminal; passwords MUST NOT be accepted as command-line values.
+- Upload and clone prompts MAY request a random server password with an empty value; a custom password MUST be confirmed.
+- Custom-password uploads and clones MUST require positive `password_protected` confirmation from the server.
+- `pb manage show [--json] <code|manage-url>` supports human-readable or structured metadata output.
+- Delete and manage tokens MUST be sent only in the appropriate request headers, never diagnostic output.
+- Code-only delete/manage references MUST prompt for their token; private URLs MAY supply the token.
+- Management JSON MUST include only known metadata fields and MUST NOT forward private token fields from server responses.
+
 ### Retrieval
 
-- `pb get` MUST request raw paste content.
+- `pb show` MUST request raw paste content.
 - Paste passwords MUST be sent in the `paste-password` HTTP header.
 - Paste passwords MUST NOT be placed in a query string.
 - A full paste URL MUST match the configured server.
-- Redirects for `pb get` MUST retain the configured scheme, hostname, effective port, and base path.
+- Redirects for `pb show` MUST retain the configured scheme, hostname, effective port, and base path.
 - Redirect destinations MUST NOT contain user information.
 - A rejected redirect MUST NOT receive the `paste-password` header.
 - Do not weaken same-server or redirect checks unless the user explicitly requests a change to the retrieval trust boundary.
@@ -171,8 +233,9 @@ Do not merge argument or configuration failures into the network/server failure 
 ## 8. Packaging Rules
 
 - Release binaries MUST be static and built with `CGO_ENABLED=0`.
-- Package generation MUST use `packaging/nfpm.yaml`.
-- Distribution packages MUST install the binary at `/usr/bin/pb`.
+- Debian, Arch, and RPM package generation MUST use `packaging/nfpm.yaml`; Void XBPS builds MUST reuse its payload through the temporary Debian archive.
+- Nix packages MUST use `package.nix` and the pinned flake inputs; Nix installs to the Nix store and exposes `pb` through its profile.
+- Distribution archive packages MUST install the binary at `/usr/bin/pb`; Nix packages MUST expose `$out/bin/pb`.
 - nFPM packages MUST install documentation below `/usr/share/doc/pastebox-cli/`.
 - Debian packages MUST support:
   - Go `amd64` -> Debian `amd64`.
@@ -185,6 +248,10 @@ Do not merge argument or configuration failures into the network/server failure 
   - Go `arm64` -> unsupported.
 - RPM `arm64` or `aarch64` packages MUST NOT be added unless the user explicitly requests RPM ARM support and the RPM workflow and package verification are updated in the same task.
 - Preserve source-based AUR support for `x86_64` and `aarch64`.
+- Preserve Void packages for `x86_64` and `aarch64`, with both glibc and musl variants.
+- Nix packages MUST support `x86_64-linux` and `aarch64-linux` and retain static binaries and installed-command checks.
+- Package builds MUST install Bash, Zsh, and Fish completions below the package's `share/` directory.
+- The CLI and nFPM/Nix packages MUST use the same scripts from `packaging/completions/`; AUR builds MUST generate scripts from the archived release binary to preserve older tag builds.
 - Date-based tags such as `v26.07.17-1` MUST be normalized into upgradeable distribution package versions.
 - `pb version` MUST retain the original release tag and injected commit ID.
 
@@ -195,11 +262,14 @@ Do not merge argument or configuration failures into the network/server failure 
 - Preserve manual dispatch support for rebuilding packages or recreating releases from existing artifacts.
 - Quality checks MUST complete successfully before a `main` push creates a release tag.
 - Package workflows MUST preserve the architecture mappings in Section 8.
+- Keep validation for GitHub configuration and test-only changes in `quality-checks.yml` independent of release creation.
+- AUR publication MUST retain successful-release/manual-dispatch gates and skip-marker/Dependabot exclusions for automatic runs.
 - Do not claim that a workflow or CI check ran when it was only reviewed locally.
 
 ## 10. Documentation Rules
 
-- Keep repository overview and general usage in `README.md` and `README_ko.md`.
+- Keep repository overviews, concise directory trees, and documentation entry links in `README.md` and `README_ko.md`.
+- Keep operational guidance in matching `docs/en/` and `docs/ko/` pages; link both languages from `docs/README.md`.
 - Keep package installation and package-specific usage in `package.md` and `package_ko.md`.
 - When public CLI behavior changes, update the English and Korean versions of every affected document in the same task.
 - When config bootstrap behavior changes, update both README files and both package documentation files in the same task.
@@ -323,9 +393,9 @@ Each retained note MUST identify the problematic area, cause, fix, and preventio
 
 ### Redirect errors must not echo destination user information
 
-- Problematic area: `get.go` redirect rejection errors for `pb get`.
+- Problematic area: shared HTTP diagnostics in `http.go` for upload, show, clone, delete, and manage.
 - Cause: `http.Client.Do` wraps `CheckRedirect` errors in `url.Error`, whose text includes the rejected destination URL and can expose embedded credentials.
-- Fix: Return a distinct application redirect error and unwrap it before formatting the request failure:
+- Fix: Route request failures through `requestError`, which unwraps application redirect errors and formats other transport failures without server-controlled URLs:
 
   ```go
   var redirectErr *getRedirectError

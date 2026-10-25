@@ -28,6 +28,13 @@ Nix uses its own package definition and store paths; nFPM continues to define
 the distribution archive packages. No nixpkgs registration or binary cache
 publication is performed by this workflow.
 
+## Void Linux
+
+`void-package-build.yml` builds native `x86_64` and `aarch64` XBPS packages
+for glibc and musl. It uses `packaging/nfpm.yaml` to produce a temporary DEB
+payload, then creates and installs the XBPS packages in Void containers.
+The combined release workflow includes all four XBPS assets in its checksums.
+
 ## AUR
 
 The repository-root `PKGBUILD` and `.SRCINFO` define the source-based AUR
