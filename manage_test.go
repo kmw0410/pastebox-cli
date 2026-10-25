@@ -104,3 +104,50 @@ func TestRunManageRejectsUnsafeRedirectWithoutSendingToken(t *testing.T) {
 		t.Fatalf("stderr exposed token: %q", stderr.String())
 	}
 }
+
+func TestRunManageShowJSON(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodGet || r.URL.Path != "/api/v1/pastes/abc" || r.Header.Get("paste-manage-token") != "manage-secret" {
+			t.Error("unexpected metadata request")
+		}
+		io.WriteString(w, `{"id":"abc","url":"https://public.example/abc","size":42,"password_protected":true,"manage_token":"server-secret"}`)
+	}))
+	defer server.Close()
+	app, stdout, stderr := testApplication(serverConfig(t, server.URL), strings.NewReader(""))
+	app.readPassword = testPasswordReader("manage-secret")
+	if code := app.run([]string{"manage", "show", "--json", "abc"}); code != 0 {
+		t.Fatalf("exit = %d, stderr = %s", code, stderr.String())
+	}
+	var result map[string]any
+	if err := json.Unmarshal(stdout.Bytes(), &result); err != nil {
+		t.Fatal(err)
+	}
+	if result["id"] != "abc" || result["size"] != float64(42) || result["password_protected"] != true {
+		t.Fatalf("metadata = %v", result)
+	}
+	if strings.Contains(stdout.String(), "secret") {
+		t.Fatal("metadata exposed token")
+	}
+	reader, writer := io.Pipe()
+	reader.Close()
+	defer writer.Close()
+	app.stdout = writer
+	app.readPassword = testPasswordReader("manage-secret")
+	if code := app.run([]string{"manage", "show", "--json", "abc"}); code != 1 {
+		t.Fatalf("output failure exit = %d, want 1", code)
+	}
+}
+
+func TestRunManageJSONArgumentErrors(t *testing.T) {
+	for _, args := range [][]string{
+		{"manage", "show", "--json"},
+		{"manage", "show", "--json", "abc", "extra"},
+		{"manage", "show", "--unknown", "abc"},
+		{"manage", "label", "--json", "abc", "label"},
+	} {
+		app, _, _ := testApplication("missing-config", strings.NewReader(""))
+		if code := app.run(args); code != 2 {
+			t.Fatalf("args = %v, exit = %d", args, code)
+		}
+	}
+}

@@ -19,6 +19,7 @@ pb show AbC123
 pb clone AbC123
 pb delete AbC123
 pb manage show AbC123
+pb manage show --json AbC123
 ```
 
 보호된 Paste는 `pb show --password AbC123`으로 조회합니다. 비밀번호는 프롬프트로
@@ -31,3 +32,7 @@ HTTP 오류는 상태 코드와 표준 설명으로 표시합니다. Paste 내�
 
 잘못된 Paste 대상은 비밀번호 프롬프트나 HTTP 요청 전에 종료 코드 `2`로
 처리합니다. 네트워크·서버·출력 오류의 종료 코드는 `1`입니다.
+
+`pb manage show --json <code|manage-url>`은 스크립트에서 사용할 Paste 메타데이터를
+JSON으로 출력하며 비밀번호와 비공개 토큰은 포함하지 않습니다. 다른 관리 명령은
+사람이 읽기 쉬운 형식으로 출력합니다.

@@ -185,6 +185,7 @@ Use the private manage URL, or a code followed by a hidden manage-token prompt, 
 
 ```bash
 pb manage show 'https://paste.example.com/AbC123?manage=MANAGE_TOKEN'
+pb manage show --json AbC123
 pb manage label AbC123 'production log'
 pb manage policy AbC123 12h
 pb manage password enable AbC123
@@ -300,3 +301,7 @@ Package removal does not delete `~/.config/pastebox/config.json`.
 
 HTTP failure diagnostics use standard status descriptions and omit server error
 bodies and raw transport errors, which may contain paste contents or secrets.
+
+`pb manage show --json <code|manage-url>` prints paste metadata as JSON for
+scripts; passwords and private tokens are excluded. Other manage commands keep
+their human-readable output.

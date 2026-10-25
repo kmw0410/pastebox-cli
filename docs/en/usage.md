@@ -19,6 +19,7 @@ pb show AbC123
 pb clone AbC123
 pb delete AbC123
 pb manage show AbC123
+pb manage show --json AbC123
 ```
 
 `pb show --password AbC123` prompts for a protected paste password. The value
@@ -32,3 +33,7 @@ out of diagnostics.
 
 Invalid paste targets exit with code `2` before any password prompt or HTTP
 request. Network, server, and output failures exit with code `1`.
+
+`pb manage show --json <code|manage-url>` prints paste metadata as JSON for
+scripts; passwords and private tokens are excluded. Other manage commands keep
+their human-readable output.

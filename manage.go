@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -38,6 +39,17 @@ func (a application) runManage(args []string) int {
 		return 0
 	}
 
+	var jsonOutput bool
+	if len(args) > 0 && args[0] == "show" {
+		flags := flag.NewFlagSet("manage show", flag.ContinueOnError)
+		flags.SetOutput(io.Discard)
+		flags.BoolVar(&jsonOutput, "json", false, "")
+		if err := flags.Parse(args[1:]); err != nil {
+			fmt.Fprint(a.stderr, manageUsageText)
+			return 2
+		}
+		args = append([]string{"show"}, flags.Args()...)
+	}
 	command, target, action, err := parseManageArguments(args)
 	if err != nil {
 		fmt.Fprint(a.stderr, manageUsageText)
@@ -88,7 +100,12 @@ func (a application) runManage(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 1
 	}
-	if err := writeManagedPaste(a.stdout, result); err != nil {
+	if jsonOutput {
+		err = json.NewEncoder(a.stdout).Encode(result)
+	} else {
+		err = writeManagedPaste(a.stdout, result)
+	}
+	if err != nil {
 		fmt.Fprintf(a.stderr, "write output: %v\n", err)
 		return 1
 	}

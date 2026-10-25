@@ -185,6 +185,7 @@ CLI는 버전 지정 Pastebox API의 `paste-delete-token` 헤더로 토큰을 �
 
 ```bash
 pb manage show 'https://paste.example.com/AbC123?manage=MANAGE_TOKEN'
+pb manage show --json AbC123
 pb manage label AbC123 '운영 로그'
 pb manage policy AbC123 12h
 pb manage password enable AbC123
@@ -298,3 +299,7 @@ sudo dnf remove pastebox-cli
 
 HTTP 오류 진단은 표준 상태 설명을 사용하며, Paste 내용이나 비밀정보가 포함될 수
 있는 서버 오류 본문과 원본 통신 오류는 출력하지 않습니다.
+
+`pb manage show --json <code|manage-url>`은 스크립트에서 사용할 Paste 메타데이터를
+JSON으로 출력하며 비밀번호와 비공개 토큰은 포함하지 않습니다. 다른 관리 명령은
+사람이 읽기 쉬운 형식으로 출력합니다.

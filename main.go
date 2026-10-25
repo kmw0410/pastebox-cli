@@ -68,7 +68,7 @@ const deleteUsageText = `Usage:
 `
 
 const manageUsageText = `Usage:
-  pb manage show <code|manage-url>
+  pb manage show [--json] <code|manage-url>
   pb manage label <code|manage-url> <label>
   pb manage policy <code|manage-url> <temporary|permanent|once|duration>
   pb manage password enable <code|manage-url>

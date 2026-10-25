@@ -63,6 +63,8 @@ _pb() {
     manage)
       if (( CURRENT == 3 )); then
         _values 'command' show label policy password
+      elif [[ $words[3] == show ]]; then
+        _arguments '--json[print paste metadata as JSON]' '1:paste code or manage URL:'
       elif [[ $words[3] == password && CURRENT == 4 ]]; then
         _values 'action' enable disable
       elif [[ $words[3] == policy && CURRENT == 5 ]]; then
@@ -114,6 +116,8 @@ const bashCompletion = `_pb() {
     manage)
       if (( COMP_CWORD == 2 )); then
         COMPREPLY=( $(compgen -W 'show label policy password' -- "$cur") )
+      elif [[ ${COMP_WORDS[2]} == show ]]; then
+        COMPREPLY=( $(compgen -W '--json' -- "$cur") )
       elif [[ ${COMP_WORDS[2]} == password && COMP_CWORD == 3 ]]; then
         COMPREPLY=( $(compgen -W 'enable disable' -- "$cur") )
       elif [[ ${COMP_WORDS[2]} == policy && COMP_CWORD == 4 ]]; then
@@ -166,6 +170,7 @@ complete -c pb -n '__fish_seen_subcommand_from clone' -l permanent -l once -l pa
 complete -c pb -n '__fish_seen_subcommand_from clone' -l expires -r
 complete -c pb -n '__fish_seen_subcommand_from clone' -l code -r
 complete -c pb -n '__fish_seen_subcommand_from manage' -a 'show label policy password'
+complete -c pb -n '__fish_seen_subcommand_from manage; and __fish_seen_subcommand_from show' -l json -d 'Print paste metadata as JSON'
 complete -c pb -n '__fish_seen_subcommand_from manage; and __fish_seen_subcommand_from password' -a 'enable disable'
 complete -c pb -n '__fish_seen_subcommand_from manage; and __fish_seen_subcommand_from policy' -a 'temporary permanent once duration'
 complete -c pb -n '__fish_seen_subcommand_from config' -a 'show set validate'
