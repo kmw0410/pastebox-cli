@@ -25,34 +25,84 @@ func writeOSRelease(t *testing.T, content string) string {
 	return path
 }
 
-func TestRunUpdateReportsArchUpdatesTemporarilyUnavailable(t *testing.T) {
-	app, stdout, stderr := testApplication("", bytes.NewReader(nil))
-	app.osReleasePath = writeOSRelease(t, "ID=endeavouros\nID_LIKE=arch\n")
-	app.httpClient = &http.Client{Transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-		t.Fatal("Arch update attempted a network request")
-		return nil, nil
-	})}
-	app.lookPath = func(string) (string, error) {
-		t.Fatal("Arch update searched for an AUR helper")
-		return "", nil
-	}
-	app.outputCommand = func(context.Context, string, ...string) ([]byte, error) {
-		t.Fatal("Arch update queried an AUR helper")
-		return nil, nil
-	}
-	app.runCommand = func(context.Context, string, ...string) error {
-		t.Fatal("Arch update ran an AUR helper")
-		return nil
-	}
-
-	if code := app.run([]string{"update"}); code != 0 {
-		t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
-	}
-	if !strings.Contains(stdout.String(), "Arch Linux updates are temporarily unavailable") {
-		t.Fatalf("stdout = %q", stdout.String())
-	}
-	if !strings.Contains(stdout.String(), releasePageURL) {
-		t.Fatalf("stdout = %q", stdout.String())
+func TestRunArchUpdate(t *testing.T) {
+	for _, tt := range []struct {
+		name, helper, output, message   string
+		queryFail, installFail, current bool
+		wantExit                        int
+	}{
+		{name: "prefer paru", helper: "paru", output: "pastebox-cli old -> new", message: "with paru"},
+		{name: "fall back to yay", helper: "yay", output: "pastebox-cli old -> new", message: "with yay"},
+		{name: "no helper", message: "neither paru nor yay"},
+		{name: "no AUR update", helper: "paru", message: "No pastebox-cli update"},
+		{name: "query failure", helper: "paru", queryFail: true, wantExit: 1},
+		{name: "install failure", helper: "paru", output: "pastebox-cli old -> new", installFail: true, wantExit: 1},
+		{name: "current version", current: true, message: "already up to date"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			tag := "v99.10.25"
+			if tt.current {
+				tag = version
+			}
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				json.NewEncoder(w).Encode(latestRelease{TagName: tag})
+			}))
+			defer server.Close()
+			app, stdout, stderr := testApplication("", bytes.NewReader(nil))
+			app.osReleasePath = writeOSRelease(t, "ID=endeavouros\nID_LIKE=arch\n")
+			app.releaseAPIURL = server.URL
+			app.httpClient = server.Client()
+			var lookedUp []string
+			app.lookPath = func(name string) (string, error) {
+				lookedUp = append(lookedUp, name)
+				if name == tt.helper {
+					return name, nil
+				}
+				return "", fmt.Errorf("helper not installed")
+			}
+			queried, installed := false, false
+			app.outputCommand = func(_ context.Context, name string, args ...string) ([]byte, error) {
+				queried = true
+				if name != tt.helper || strings.Join(args, " ") != "-Qua pastebox-cli" {
+					t.Error("unexpected helper query")
+				}
+				if tt.queryFail {
+					return nil, fmt.Errorf("synthetic query failure")
+				}
+				return []byte(tt.output), nil
+			}
+			app.runCommand = func(_ context.Context, name string, args ...string) error {
+				installed = true
+				if name != tt.helper || strings.Join(args, " ") != "-S --needed pastebox-cli" {
+					t.Error("unexpected helper install")
+				}
+				if tt.installFail {
+					return fmt.Errorf("synthetic install failure")
+				}
+				return nil
+			}
+			if code := app.run([]string{"update"}); code != tt.wantExit {
+				t.Fatalf("exit = %d, stderr = %q", code, stderr.String())
+			}
+			if tt.message != "" && !strings.Contains(stdout.String(), tt.message) {
+				t.Fatalf("stdout missing %q", tt.message)
+			}
+			if queried != (tt.helper != "" && !tt.current) {
+				t.Error("unexpected helper query count")
+			}
+			if installed != (tt.output != "" && !tt.queryFail && !tt.current) {
+				t.Error("unexpected install count")
+			}
+			if tt.current && len(lookedUp) != 0 {
+				t.Error("current version searched for helpers")
+			}
+			if tt.helper == "paru" && strings.Join(lookedUp, " ") != "paru" {
+				t.Error("paru was not preferred")
+			}
+			if tt.helper == "yay" && strings.Join(lookedUp, " ") != "paru yay" {
+				t.Error("yay fallback order changed")
+			}
+		})
 	}
 }
 

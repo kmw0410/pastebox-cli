@@ -20,7 +20,6 @@ import (
 )
 
 const defaultReleaseAPIURL = "https://api.github.com/repos/kmw0410/pastebox-cli/releases/latest"
-const releasePageURL = "https://github.com/kmw0410/pastebox-cli/releases"
 
 type releaseAsset struct {
 	Name               string `json:"name"`
@@ -54,11 +53,7 @@ func (a application) runUpdate(args []string) int {
 		return 2
 	}
 	if distroMatches(distro, "arch") {
-		// AUR updates are temporarily disabled.
-		// return a.runArchUpdate()
-		fmt.Fprintln(a.stdout, "Arch Linux updates are temporarily unavailable.")
-		fmt.Fprintf(a.stdout, "Download a package manually from: %s\n", releasePageURL)
-		return 0
+		return a.runArchUpdate()
 	}
 
 	target, err := selectUpdateTarget(distro, a.updateGOARCH())

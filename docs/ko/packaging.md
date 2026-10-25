@@ -52,6 +52,11 @@ makepkg --cleanbuild
 namcap PKGBUILD
 ```
 
+`aur-publish.yml`은 `main`의 Release 워크플로가 성공한 뒤, 또는 기존 릴리스
+태그를 지정한 수동 실행으로 게시합니다. 자동 실행은 `[skip ci]`와 Dependabot
+제외 조건을 따릅니다. 게시 전에 저장소 비밀값으로 `AUR_USERNAME`, `AUR_EMAIL`,
+`AUR_SSH_PRIVATE_KEY`를 설정해야 합니다.
+
 ## 워크플로 검증
 
 `quality-checks.yml`은 GitHub 설정 및 테스트 파일 변경 시 push와 pull request에서

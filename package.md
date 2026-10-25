@@ -209,23 +209,21 @@ RHEL-family systems and Fedora, it performs the same process for the RPM and
 installs it with `dnf`. The package manager may ask for administrator access
 through `sudo`.
 
-~~On Arch Linux family systems, the command checks the latest GitHub Release but
+On Arch Linux family systems, the command checks the latest GitHub Release but
 does not download a package from it. When a newer release exists, it uses
 `paru` when available, or falls back to `yay`, to query whether the
 `pastebox-cli` AUR package has an update. It runs the package-specific install
-only when that query reports a newer package:~~
+only when that query reports a newer package:
 
-- ~~`paru -Qua pastebox-cli`~~
-- ~~`paru -S --needed pastebox-cli`~~
-- ~~or, when `paru` is unavailable:~~
-- ~~`yay -Qua pastebox-cli`~~
-- ~~`yay -S --needed pastebox-cli`~~
+- `paru -Qua pastebox-cli`
+- `paru -S --needed pastebox-cli`
+- or, when `paru` is unavailable:
+- `yay -Qua pastebox-cli`
+- `yay -S --needed pastebox-cli`
 
-~~These commands do not request a full system upgrade. If neither AUR helper is
+These commands do not request a full system upgrade. If neither AUR helper is
 installed, the command asks you to install `paru` or `yay` and run `pb update`
-again; this guidance is not treated as an error.~~
-
-**AUR is temporarily unavailable; see the [related notice](https://archlinux.org/news/active-aur-malicious-packages-incident/).**
+again; this guidance is not treated as an error.
 
 An already current installation is left unchanged. Automatic RPM updates are
 not available on ARM systems.

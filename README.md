@@ -11,70 +11,31 @@ usage, shell completion, and packaging guidance.
 
 ```text
 pastebox-cli/
-├── .github/
-│   └── workflows/
-│       ├── arch-package-build.yml
-│       ├── aur-publish.yml
-│       ├── cli-package-build.yml
-│       ├── deb-package-build.yml
-│       ├── release-build.yml
-│       ├── release.yml
-│       └── rpm-package-build.yml
-├── .gitignore
-├── .SRCINFO
+├── .github/workflows/    # CI and release workflows
 ├── docs/
-│   ├── en/
-│   │   ├── packaging/
-│   │   │   └── aur.md
-│   │   ├── configuration.md
-│   │   ├── installation.md
-│   │   ├── shell-completion.md
-│   │   └── usage.md
-│   ├── ko/
-│   │   ├── packaging/
-│   │   │   └── aur.md
-│   │   ├── configuration.md
-│   │   ├── installation.md
-│   │   ├── shell-completion.md
-│   │   └── usage.md
+│   ├── en/               # English documentation
+│   ├── ko/               # Korean documentation
 │   └── README.md
 ├── packaging/
 │   └── nfpm.yaml
 ├── AGENTS.md
-├── LICENSE
 ├── PKGBUILD
-├── README.md
-├── README_ko.md
-├── clone.go
-├── clone_test.go
-├── completion.go
-├── config.go
-├── config.json
-├── config_test.go
-├── delete.go
-├── delete_test.go
-├── get.go
-├── get_test.go
+├── .SRCINFO
+├── flake.nix
+├── flake.lock
+├── package.nix
 ├── go.mod
 ├── go.sum
 ├── main.go
-├── main_test.go
-├── manage.go
-├── manage_test.go
-├── output.go
+├── README.md
+├── README_ko.md
 ├── package.md
-├── package_ko.md
-├── password_prompt.go
-├── password_prompt_test.go
-├── update.go
-├── update_test.go
-├── upload.go
-├── upload_test.go
-└── workflow_test.go
+└── package_ko.md
 ```
 
 ## AUR
 
 [pastebox-cli](https://aur.archlinux.org/packages/pastebox-cli)
 
-**AUR is temporarily unavailable; see the [related notice](https://archlinux.org/news/active-aur-malicious-packages-incident/).**
+Install from AUR with `paru -S pastebox-cli` or `yay -S pastebox-cli`.
+Run `pb update` to check and install package updates with the available helper.

@@ -73,10 +73,15 @@ func TestAutomatedReleaseWorkflowsSkipDependabotCommits(t *testing.T) {
 	}
 }
 
-func TestAURPublishWorkflowIsTemporarilyDisabled(t *testing.T) {
+func TestAURPublishWorkflowRequiresSuccessfulReleaseOrManualDispatch(t *testing.T) {
 	workflow := readWorkflow(t, ".github/workflows/aur-publish.yml")
-	if !strings.Contains(workflow, "if: ${{ false }}") {
-		t.Fatal("aur-publish.yml publish job is not disabled")
+	for _, want := range []string{"workflow_dispatch:", "- Release", "- main", "github.event_name == 'workflow_dispatch' ||", "github.event.workflow_run.conclusion == 'success'", "[skip ci]", "dependabot[bot]", "INPUT_TAG: ${{ inputs.tag }}", `TAG="$INPUT_TAG"`} {
+		if !strings.Contains(workflow, want) {
+			t.Errorf("AUR workflow is missing %q", want)
+		}
+	}
+	if strings.Contains(workflow, "if: ${{ false }}") {
+		t.Fatal("AUR publishing is still disabled")
 	}
 }
 

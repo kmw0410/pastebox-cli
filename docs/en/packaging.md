@@ -53,6 +53,11 @@ makepkg --cleanbuild
 namcap PKGBUILD
 ```
 
+`aur-publish.yml` publishes after a successful Release workflow on `main`, or
+by manual dispatch for an existing release tag. Automated runs honor `[skip ci]`
+and skip Dependabot commits. Configure `AUR_USERNAME`, `AUR_EMAIL`, and
+`AUR_SSH_PRIVATE_KEY` as repository secrets before running publication.
+
 ## Workflow validation
 
 `quality-checks.yml` validates GitHub configuration and test-only changes on

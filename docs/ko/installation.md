@@ -17,7 +17,9 @@ sudo dnf install ./pastebox-cli-VERSION-1.x86_64.rpm
 ```
 
 `pb update`는 지원되는 최신 DEB 또는 RPM 패키지를 내려받고 검증한 후 설치합니다.
-AUR 게시가 일시 중단되어 Arch Linux 계열의 자동 업데이트는 현재 제공하지 않습니다.
+Arch Linux 계열에서는 `paru` 또는 `yay`로 AUR 패키지 업데이트를 확인하고
+가능한 경우 설치합니다. AUR 패키지는 `paru -S pastebox-cli` 또는
+`yay -S pastebox-cli`로 설치할 수 있습니다.
 
 패키지 설치, 검증, 제거의 전체 절차는 [package_ko.md](../../package_ko.md)를
 참조합니다.

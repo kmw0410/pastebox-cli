@@ -11,70 +11,31 @@ Pastebox 텍스트 업로드와 원문 조회를 위한 터미널 클라이언�
 
 ```text
 pastebox-cli/
-├── .github/
-│   └── workflows/
-│       ├── arch-package-build.yml
-│       ├── aur-publish.yml
-│       ├── cli-package-build.yml
-│       ├── deb-package-build.yml
-│       ├── release-build.yml
-│       ├── release.yml
-│       └── rpm-package-build.yml
-├── .gitignore
-├── .SRCINFO
+├── .github/workflows/    # CI 및 릴리스 워크플로
 ├── docs/
-│   ├── en/
-│   │   ├── packaging/
-│   │   │   └── aur.md
-│   │   ├── configuration.md
-│   │   ├── installation.md
-│   │   ├── shell-completion.md
-│   │   └── usage.md
-│   ├── ko/
-│   │   ├── packaging/
-│   │   │   └── aur.md
-│   │   ├── configuration.md
-│   │   ├── installation.md
-│   │   ├── shell-completion.md
-│   │   └── usage.md
+│   ├── en/               # 영문 문서
+│   ├── ko/               # 한국어 문서
 │   └── README.md
 ├── packaging/
 │   └── nfpm.yaml
 ├── AGENTS.md
-├── LICENSE
 ├── PKGBUILD
-├── README.md
-├── README_ko.md
-├── clone.go
-├── clone_test.go
-├── completion.go
-├── config.go
-├── config.json
-├── config_test.go
-├── delete.go
-├── delete_test.go
-├── get.go
-├── get_test.go
+├── .SRCINFO
+├── flake.nix
+├── flake.lock
+├── package.nix
 ├── go.mod
 ├── go.sum
 ├── main.go
-├── main_test.go
-├── manage.go
-├── manage_test.go
-├── output.go
+├── README.md
+├── README_ko.md
 ├── package.md
-├── package_ko.md
-├── password_prompt.go
-├── password_prompt_test.go
-├── update.go
-├── update_test.go
-├── upload.go
-├── upload_test.go
-└── workflow_test.go
+└── package_ko.md
 ```
 
 ## AUR
 
 [pastebox-cli](https://aur.archlinux.org/packages/pastebox-cli)
 
-**AUR은 일시적으로 이용할 수 없으며 [관련 공지](https://archlinux.org/news/active-aur-malicious-packages-incident/)를 참고하십시오.**
+`paru -S pastebox-cli` 또는 `yay -S pastebox-cli`로 AUR에서 설치합니다.
+`pb update`는 설치된 AUR 도구로 패키지 업데이트를 확인하고 설치합니다.

@@ -18,8 +18,9 @@ sudo dnf install ./pastebox-cli-VERSION-1.x86_64.rpm
 ```
 
 Run `pb update` to download, verify, and install the latest supported DEB or
-RPM package. Arch Linux family updates are temporarily unavailable because AUR
-publication is paused.
+RPM package. On Arch Linux, it checks for a package update through `paru` or
+`yay` and installs it when available. Install the AUR package with
+`paru -S pastebox-cli` or `yay -S pastebox-cli`.
 
 For complete package installation, verification, and removal instructions, see
 [package.md](../../package.md).

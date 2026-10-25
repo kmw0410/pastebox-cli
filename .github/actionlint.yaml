@@ -1,5 +1,0 @@
-paths:
-  .github/workflows/aur-publish.yml:
-    ignore:
-      # AUR publication stays explicitly disabled until it is deliberately resumed.
-      - '^constant expression "false" in condition\. remove the if: section$'
