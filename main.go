@@ -329,6 +329,11 @@ func (a application) runShow(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 2
 	}
+	target, err := resolvePasteURL(cfg.ServerURL, flags.Arg(0))
+	if err != nil {
+		fmt.Fprintf(a.stderr, "invalid paste target: %v\n", err)
+		return 2
+	}
 	password := ""
 	if *promptPassword {
 		password, err = a.promptExistingPassword("Paste password: ")
@@ -337,7 +342,7 @@ func (a application) runShow(args []string) int {
 			return 2
 		}
 	}
-	if err := getPaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), password, a.stdout); err != nil {
+	if err := getPaste(a.requestContext(), a.httpClient, cfg, target, password, a.stdout); err != nil {
 		fmt.Fprintln(a.stderr, err)
 		return 1
 	}
@@ -379,6 +384,11 @@ func (a application) runClone(args []string) int {
 		fmt.Fprintln(a.stderr, err)
 		return 2
 	}
+	target, err := resolvePasteURL(cfg.ServerURL, flags.Arg(0))
+	if err != nil {
+		fmt.Fprintf(a.stderr, "invalid paste target: %v\n", err)
+		return 2
+	}
 	sourcePassword := ""
 	if *promptSourcePassword {
 		sourcePassword, err = a.promptExistingPassword("Source paste password: ")
@@ -394,7 +404,7 @@ func (a application) runClone(args []string) int {
 			return 2
 		}
 	}
-	result, raw, err := clonePaste(a.requestContext(), a.httpClient, cfg, flags.Arg(0), sourcePassword, opts)
+	result, raw, err := clonePaste(a.requestContext(), a.httpClient, cfg, target, sourcePassword, opts)
 	if err != nil {
 		fmt.Fprintln(a.stderr, err)
 		return 1

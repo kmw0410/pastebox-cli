@@ -50,7 +50,7 @@ func resolvePasteURL(serverURL, target string) (string, error) {
 	}
 	if !strings.Contains(target, "://") {
 		if strings.ContainsAny(target, "/?#") {
-			return "", fmt.Errorf("invalid paste code %q", target)
+			return "", fmt.Errorf("paste code must not contain a slash, query, or fragment")
 		}
 		return strings.TrimRight(serverURL, "/") + "/" + url.PathEscape(target), nil
 	}
@@ -61,7 +61,7 @@ func resolvePasteURL(serverURL, target string) (string, error) {
 	}
 	parsed, err := url.Parse(target)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("paste URL is invalid")
 	}
 	if parsed.Scheme != base.Scheme || parsed.Host != base.Host {
 		return "", fmt.Errorf("paste URL must belong to configured server %s", serverURL)

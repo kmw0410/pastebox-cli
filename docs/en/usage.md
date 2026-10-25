@@ -29,3 +29,6 @@ Run `pb <command> --help` for command-specific options.
 HTTP failures report the status code and its standard description. Server error
 bodies and raw transport errors are omitted to keep paste contents and secrets
 out of diagnostics.
+
+Invalid paste targets exit with code `2` before any password prompt or HTTP
+request. Network, server, and output failures exit with code `1`.

@@ -128,3 +128,24 @@ func TestRunCompletionRejectsUnsupportedShell(t *testing.T) {
 		t.Fatalf("stderr = %q", stderr.String())
 	}
 }
+
+func TestInvalidPasteTargetsFailBeforePromptOrRequest(t *testing.T) {
+	for _, command := range []string{"show", "clone"} {
+		for _, target := range []string{"https://other.example/abc", "bad/code", "bad?token=synthetic-secret", "https://user:synthetic-secret@invalid%host/abc", "https://paste.example.com/base/abc?token=synthetic-secret"} {
+			t.Run(command+"/"+target, func(t *testing.T) {
+				app, stdout, stderr := testApplication(serverConfig(t, "https://paste.example.com/base"), strings.NewReader(""))
+				app.readPassword = func(string) (string, error) { t.Fatal("invalid target prompted for password"); return "", nil }
+				app.httpClient = nil // Any attempted HTTP request would panic.
+				if code := app.run([]string{command, "--password", target}); code != 2 {
+					t.Fatalf("exit = %d, want 2", code)
+				}
+				if stdout.Len() != 0 {
+					t.Fatal("invalid target produced stdout")
+				}
+				if strings.Contains(stderr.String(), "synthetic-secret") {
+					t.Fatal("invalid target diagnostic exposed a secret")
+				}
+			})
+		}
+	}
+}
