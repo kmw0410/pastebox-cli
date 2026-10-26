@@ -105,7 +105,7 @@ jobs:
               --platform "linux/${PLATFORM}" \
               -v "$PWD/dist:/dist:ro" \
               debian:stable-slim \
-              sh -c "dpkg -i /dist/${DEB_FILE} && pb version | grep -F '${TAG}'"
+              sh -c "dpkg-deb -f /dist/${DEB_FILE} Depends | grep -w ca-certificates && apt-get update && apt-get install -y /dist/${DEB_FILE} && test -s /etc/ssl/certs/ca-certificates.crt && pb version | grep -F '${TAG}'"
           done
 
       - name: Write package metadata

@@ -97,14 +97,14 @@ jobs:
             --platform linux/amd64 \
             -v "$PWD/dist:/dist:ro" \
             archlinux:base \
-            sh -c "pacman -U --noconfirm /dist/${ARCH_FILE} && pb version | grep -F '${TAG}'"
+            sh -c "pacman -Sy --noconfirm && bsdtar -xOf /dist/${ARCH_FILE} .PKGINFO | grep -Fx 'depend = ca-certificates' && pacman -U --noconfirm /dist/${ARCH_FILE} && test -s /etc/ssl/certs/ca-certificates.crt && pb version | grep -F '${TAG}'"
 
           ARM_ARCH_FILE="pastebox-cli-${PACKAGE_VERSION}-1-aarch64.pkg.tar.zst"
           docker run --rm \
             --platform linux/amd64 \
             -v "$PWD/dist:/dist:ro" \
             archlinux:base \
-            sh -c "bsdtar -xOf /dist/${ARM_ARCH_FILE} .PKGINFO | grep -F 'arch = aarch64'"
+            sh -c "bsdtar -xOf /dist/${ARM_ARCH_FILE} .PKGINFO | grep -F 'arch = aarch64' && bsdtar -xOf /dist/${ARM_ARCH_FILE} .PKGINFO | grep -Fx 'depend = ca-certificates'"
 
       - name: Write package metadata
         env:

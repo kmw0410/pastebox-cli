@@ -92,7 +92,7 @@ jobs:
             --platform linux/amd64 \
             -v "$PWD/dist:/dist:ro" \
             rockylinux:9-minimal \
-            sh -c "rpm --install /dist/${RPM_FILE} && pb version | grep -F '${TAG}'"
+            sh -c "rpm -qp --requires /dist/${RPM_FILE} | grep -Fx ca-certificates && microdnf install -y /dist/${RPM_FILE} && test -s /etc/pki/tls/certs/ca-bundle.crt && pb version | grep -F '${TAG}'"
 
       - name: Write package metadata
         env:

@@ -1,10 +1,11 @@
 pkgname=pastebox-cli
 pkgver=26.10.23
-pkgrel=2
+pkgrel=3
 pkgdesc="Lightweight command-line client for self-hosted Pastebox servers"
 arch=('x86_64' 'aarch64')
 url="https://github.com/kmw0410/pastebox-cli"
 license=('MIT')
+depends=('ca-certificates')
 makedepends=('go>=1.26.10')
 _tag=v26.10.23
 _commit=7919db3

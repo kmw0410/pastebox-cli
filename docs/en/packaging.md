@@ -1,5 +1,18 @@
 # Packaging
 
+## CA certificates
+
+DEB, RPM, Arch binary, AUR, and Void packages depend on `ca-certificates`.
+The distribution package manager installs the runtime CA bundle for HTTPS.
+Void declares this dependency explicitly because extracting the temporary DEB
+payload does not copy its dependency metadata.
+
+The Nix package wraps the static Go binary and retains `cacert` at runtime.
+The wrapper preserves nonempty `SSL_CERT_FILE` and `SSL_CERT_DIR` settings.
+Without these settings it uses Go's system CA bundle locations first, falling
+back to the Nix `cacert` bundle when none is readable and nonempty. Go still
+loads its default certificate directories, including locally installed CAs.
+
 ## Nix
 
 The root `package.nix` uses `buildGo127Module`; `flake.nix` exposes it as

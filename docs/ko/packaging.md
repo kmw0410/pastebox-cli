@@ -1,5 +1,18 @@
 # 패키징
 
+## CA 인증서
+
+DEB, RPM, Arch 바이너리, AUR, Void 패키지는 `ca-certificates`에 의존합니다.
+배포판 패키지 관리자가 HTTPS 통신에 필요한 CA 번들을 설치합니다.
+Void는 임시 DEB에서 파일을 추출할 때 의존성 메타데이터가 전달되지 않으므로
+이 의존성을 별도로 지정합니다.
+
+Nix 패키지는 정적 Go 바이너리에 래퍼를 추가하고 런타임에 `cacert`를 참조합니다.
+래퍼는 비어 있지 않은 `SSL_CERT_FILE`과 `SSL_CERT_DIR` 설정을 유지합니다.
+이 설정이 없으면 Go의 시스템 CA 번들 경로를 우선하고, 읽을 수 있는 비어 있지
+않은 번들이 없을 때 Nix의 `cacert` 번들을 사용합니다. Go는 로컬 CA를 포함한
+기본 인증서 디렉터리도 계속 읽습니다.
+
 ## Nix
 
 루트 `package.nix`는 `buildGo127Module`을 사용하며, `flake.nix`에서

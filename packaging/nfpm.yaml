@@ -10,6 +10,8 @@ description: Terminal client for the Pastebox text sharing service
 vendor: Pastebox
 homepage: https://github.com/kmw0410/pastebox-cli
 license: MIT
+depends:
+  - ca-certificates
 contents:
   - src: "${PACKAGE_BINARY}"
     dst: /usr/bin/pb
