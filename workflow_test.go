@@ -94,6 +94,26 @@ func readWorkflow(t *testing.T, path string) string {
 	return string(data)
 }
 
+func TestRPMVerificationInstallsDependenciesBeforeLocalPackage(t *testing.T) {
+	workflow := readWorkflow(t, ".github/workflows/rpm-package-build.yml")
+	for _, want := range []string{
+		"rockylinux:9-minimal",
+		"rpm -qp --requires /dist/${RPM_FILE} | grep -Fx ca-certificates",
+		"microdnf install -y ca-certificates && rpm --install /dist/${RPM_FILE}",
+		"test -s /etc/pki/tls/certs/ca-bundle.crt",
+	} {
+		if !strings.Contains(workflow, want) {
+			t.Errorf("RPM verification is missing %q", want)
+		}
+	}
+	if strings.Contains(workflow, "microdnf install -y /dist/") {
+		t.Error("Rocky Linux 9 microdnf cannot install the local RPM file")
+	}
+	if strings.Contains(workflow, "--nodeps") {
+		t.Error("RPM verification must enforce runtime dependencies")
+	}
+}
+
 func TestWorkflowChangesAreCheckedWithoutCreatingReleases(t *testing.T) {
 	workflow := readWorkflow(t, ".github/workflows/quality-checks.yml")
 	for _, event := range []string{"push", "pull_request"} {
