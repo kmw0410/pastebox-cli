@@ -28,32 +28,57 @@ jobs:
       contents: write
 
     steps:
+      - name: Validate package workflow run
+        id: source
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_ID: ${{ github.event_name == 'workflow_dispatch' && inputs.run_id || github.event.workflow_run.id }}
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        shell: bash
+        run: |
+          if [[ ! "$RUN_ID" =~ ^[1-9][0-9]*$ ]]; then
+            echo "Invalid package workflow run ID." >&2
+            exit 1
+          fi
+          WORKFLOW_ID="$(gh api "repos/$GITHUB_REPOSITORY/actions/workflows/cli-package-build.yml" --jq '.id')"
+          RUN_JSON="$(gh api "repos/$GITHUB_REPOSITORY/actions/runs/$RUN_ID")"
+          if ! jq -e --arg repo "$GITHUB_REPOSITORY" --arg branch "$DEFAULT_BRANCH" \
+            --argjson workflow_id "$WORKFLOW_ID" --argjson run_id "$RUN_ID" '
+              .id == $run_id and .workflow_id == $workflow_id and
+              .path == ".github/workflows/cli-package-build.yml" and
+              .repository.full_name == $repo and .head_repository.full_name == $repo and
+              .head_branch == $branch and .status == "completed" and .conclusion == "success" and
+              (.event == "workflow_run" or .event == "workflow_dispatch") and
+              (.head_sha | test("^[0-9a-f]{40}$"))
+            ' <<< "$RUN_JSON" >/dev/null; then
+            echo "Package artifacts must come from a successful trusted CLI Package Build run." >&2
+            exit 1
+          fi
+          {
+            echo "run_id=$RUN_ID"
+            echo "head_sha=$(jq -r '.head_sha' <<< "$RUN_JSON")"
+            echo "event=$(jq -r '.event' <<< "$RUN_JSON")"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
+          ref: ${{ github.event.repository.default_branch }}
 
-      - name: Download CLI packages from workflow_run
-        if: github.event_name == 'workflow_run'
-        uses: actions/download-artifact@v8
+      - name: Download validated CLI packages
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: pastebox-cli-packages
           path: ${{ runner.temp }}/pastebox-cli-packages
-          run-id: ${{ github.event.workflow_run.id }}
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Download CLI packages from workflow_dispatch
-        if: github.event_name == 'workflow_dispatch'
-        uses: actions/download-artifact@v8
-        with:
-          name: pastebox-cli-packages
-          path: ${{ runner.temp }}/pastebox-cli-packages
-          run-id: ${{ inputs.run_id }}
+          run-id: ${{ steps.source.outputs.run_id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Resolve release tag from package artifact
         id: tag
+        env:
+          RUN_HEAD_SHA: ${{ steps.source.outputs.head_sha }}
+          RUN_EVENT: ${{ steps.source.outputs.event }}
         shell: bash
         run: |
           git fetch --tags --force
@@ -65,8 +90,21 @@ jobs:
             exit 1
           fi
 
-          git rev-parse --verify "${TAG}^{commit}" >/dev/null
-          git checkout --detach "$TAG"
+          TAG_COMMIT="$(git rev-parse --verify "refs/tags/${TAG}^{commit}")"
+          # Legacy artifacts can only be tied to the workflow's source commit.
+          SOURCE_COMMIT="$RUN_HEAD_SHA"
+          if [ -f "$PACKAGE_DIR/release-commit.txt" ]; then
+            SOURCE_COMMIT="$(cat "$PACKAGE_DIR/release-commit.txt")"
+          fi
+          if [[ ! "$SOURCE_COMMIT" =~ ^[0-9a-f]{40}$ ]] || [ "$SOURCE_COMMIT" != "$TAG_COMMIT" ]; then
+            echo "Package source does not match the release tag; rebuild packages." >&2
+            exit 1
+          fi
+          if [ "$RUN_EVENT" = "workflow_run" ] && [ "$SOURCE_COMMIT" != "$RUN_HEAD_SHA" ]; then
+            echo "Automatic package source does not match its workflow commit." >&2
+            exit 1
+          fi
+          git checkout --detach "$TAG_COMMIT"
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Using tag: $TAG"
@@ -135,7 +173,7 @@ jobs:
             --notes-file release-notes.md
 
       - name: Upload release metadata
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: pastebox-cli-release-metadata
           path: ${{ runner.temp }}/pastebox-cli-packages/release-tag.txt

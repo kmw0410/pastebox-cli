@@ -6,6 +6,10 @@ on:
       tag:
         required: true
         type: string
+      source_commit:
+        description: Expected source commit from the release orchestrator
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -22,7 +26,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
 
@@ -30,6 +34,7 @@ jobs:
         id: tag
         env:
           TAG: ${{ inputs.tag }}
+          EXPECTED_COMMIT: ${{ inputs.source_commit }}
         shell: bash
         run: |
           git fetch --tags --force
@@ -37,12 +42,16 @@ jobs:
             echo "Invalid tag input: $TAG" >&2
             exit 1
           fi
-          git rev-parse --verify "${TAG}^{commit}" >/dev/null
-          git checkout --detach "$TAG"
+          SOURCE_COMMIT="$(git rev-parse --verify "refs/tags/${TAG}^{commit}")"
+          if [ -n "$EXPECTED_COMMIT" ] && [ "$SOURCE_COMMIT" != "$EXPECTED_COMMIT" ]; then
+            echo "Release tag moved since source resolution." >&2
+            exit 1
+          fi
+          git checkout --detach "$SOURCE_COMMIT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
       - name: Set up Go
-        uses: actions/setup-go@v7
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7
         with:
           go-version-file: go.mod
           cache: false
@@ -85,7 +94,7 @@ jobs:
           done
 
       - name: Set up QEMU for package tests
-        uses: docker/setup-qemu-action@v4
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4
         with:
           platforms: arm64
 
@@ -120,7 +129,7 @@ jobs:
           )
 
       - name: Upload Debian package artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: pastebox-cli-deb-packages
           path: |

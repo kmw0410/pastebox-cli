@@ -30,36 +30,37 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       tag: ${{ steps.tag.outputs.tag }}
+      source_commit: ${{ steps.tag.outputs.source_commit }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.workflow_run.head_sha }}
 
       - name: Resolve release tag
         id: tag
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+          EVENT_NAME: ${{ github.event_name }}
+          SOURCE_SHA: ${{ github.event.workflow_run.head_sha }}
         shell: bash
         run: |
           git fetch --tags --force
 
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag }}"
-            if [[ ! "$TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
-              echo "Invalid tag input: $TAG" >&2
-              exit 1
-            fi
-            git rev-parse --verify "${TAG}^{commit}" >/dev/null
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$INPUT_TAG"
           else
-            SHA="${{ github.event.workflow_run.head_sha }}"
-            TAG="$(git tag --points-at "$SHA" | grep '^v' | sort -V | tail -n 1)"
+            TAG="$(git tag --points-at "$SOURCE_SHA" | grep '^v' | sort -V | tail -n 1)"
           fi
 
-          if [ -z "$TAG" ]; then
-            echo "No release tag found." >&2
+          if [[ ! "$TAG" =~ ^v[0-9][0-9A-Za-z._-]*$ ]]; then
+            echo "Invalid or missing release tag." >&2
             exit 1
           fi
+          SOURCE_COMMIT="$(git rev-parse --verify "refs/tags/${TAG}^{commit}")"
+          echo "source_commit=$SOURCE_COMMIT" >> "$GITHUB_OUTPUT"
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Using tag: $TAG"
@@ -69,24 +70,28 @@ jobs:
     uses: ./.github/workflows/deb-package-build.yml
     with:
       tag: ${{ needs.resolve.outputs.tag }}
+      source_commit: ${{ needs.resolve.outputs.source_commit }}
 
   arch:
     needs: resolve
     uses: ./.github/workflows/arch-package-build.yml
     with:
       tag: ${{ needs.resolve.outputs.tag }}
+      source_commit: ${{ needs.resolve.outputs.source_commit }}
 
   rpm:
     needs: resolve
     uses: ./.github/workflows/rpm-package-build.yml
     with:
       tag: ${{ needs.resolve.outputs.tag }}
+      source_commit: ${{ needs.resolve.outputs.source_commit }}
 
   void:
     needs: resolve
     uses: ./.github/workflows/void-package-build.yml
     with:
       tag: ${{ needs.resolve.outputs.tag }}
+      source_commit: ${{ needs.resolve.outputs.source_commit }}
 
   collect:
     needs:
@@ -99,25 +104,25 @@ jobs:
 
     steps:
       - name: Download Debian packages
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: pastebox-cli-deb-packages
           path: ${{ runner.temp }}/deb
 
       - name: Download Arch packages
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: pastebox-cli-arch-packages
           path: ${{ runner.temp }}/arch
 
       - name: Download RPM packages
-        uses: actions/download-artifact@v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: pastebox-cli-rpm-packages
           path: ${{ runner.temp }}/rpm
 
       - name: Download Void packages
-        uses: actions/download-artifact@v5
+        uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5
         with:
           pattern: pastebox-cli-void-*-packages
           merge-multiple: true
@@ -126,6 +131,7 @@ jobs:
       - name: Collect release packages
         env:
           TAG: ${{ needs.resolve.outputs.tag }}
+          SOURCE_COMMIT: ${{ needs.resolve.outputs.source_commit }}
         shell: bash
         run: |
           mkdir -p dist
@@ -134,13 +140,14 @@ jobs:
           cp "$RUNNER_TEMP"/rpm/*.rpm dist/
           cp "$RUNNER_TEMP"/void/*.xbps dist/
           printf '%s\n' "$TAG" > dist/release-tag.txt
+          printf '%s\n' "$SOURCE_COMMIT" > dist/release-commit.txt
           (
             cd dist
             sha256sum ./*.deb ./*.pkg.tar.zst ./*.rpm ./*.xbps > checksums.txt
           )
 
       - name: Upload combined release artifact
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: pastebox-cli-packages
           path: |
@@ -150,5 +157,6 @@ jobs:
             dist/*.xbps
             dist/checksums.txt
             dist/release-tag.txt
+            dist/release-commit.txt
           if-no-files-found: error
           retention-days: 7

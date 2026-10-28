@@ -6,6 +6,10 @@ on:
       tag:
         required: true
         type: string
+      source_commit:
+        description: Expected source commit from the release orchestrator
+        required: false
+        type: string
   workflow_dispatch:
     inputs:
       tag:
@@ -32,13 +36,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
       - name: Validate and checkout release tag
         env:
           TAG: ${{ inputs.tag }}
+          EXPECTED_COMMIT: ${{ inputs.source_commit }}
         shell: bash
         run: |
           git fetch --tags --force
@@ -46,11 +51,15 @@ jobs:
             echo "Invalid tag input: $TAG" >&2
             exit 1
           fi
-          git rev-parse --verify "${TAG}^{commit}" >/dev/null
-          git checkout --detach "$TAG"
+          SOURCE_COMMIT="$(git rev-parse --verify "refs/tags/${TAG}^{commit}")"
+          if [ -n "$EXPECTED_COMMIT" ] && [ "$SOURCE_COMMIT" != "$EXPECTED_COMMIT" ]; then
+            echo "Release tag moved since source resolution." >&2
+            exit 1
+          fi
+          git checkout --detach "$SOURCE_COMMIT"
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@924ae3a1cded613372ab5595356fb5720e22ba16 # v6
         with:
           go-version-file: go.mod
           cache: false
@@ -142,7 +151,7 @@ jobs:
           done
 
       - name: Upload Void package artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: pastebox-cli-void-${{ matrix.void_arch }}-packages
           path: dist/*.xbps

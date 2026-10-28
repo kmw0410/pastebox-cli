@@ -84,3 +84,19 @@ and skip Dependabot commits. Configure `AUR_USERNAME`, `AUR_EMAIL`, and
 pushes and pull requests, including actionlint and the Go workflow assertions.
 It has read-only permissions and does not create releases. The existing release
 workflow keeps its metadata exclusions and quality gate before tagging.
+
+## Release security
+
+External Actions are pinned to full commit SHAs; review upstream changes when
+updating these pins. AUR publication verifies the Ed25519 host key against the
+[official fingerprint](https://archlinux.org/news/aur-migration-new-ssh-hostkeys/)
+and stops on a mismatch. Verify any key rotation independently before updating it.
+
+For a manual Release run, select a successful `CLI Package Build` run from this
+repository's default branch, triggered by `workflow_run` or `workflow_dispatch`.
+The release checks the run's workflow identity and the artifact's source commit
+against the release tag. Package jobs also reject a tag that moved after source
+resolution. Existing tags can still be rebuilt by dispatching `CLI Package Build`
+on the default branch with the desired tag, then supplying its run ID to Release.
+Legacy artifacts without source-commit metadata are accepted only when the tag
+points to the package workflow's head commit; otherwise rebuild the packages.
